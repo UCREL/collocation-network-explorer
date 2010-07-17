@@ -1,0 +1,121 @@
+package edu.gullick.CONE;
+
+/*
+ * Word node class that acts as both a particle in the physics engine, but also a node in the visible graph. 
+ */
+
+import java.awt.Color;
+import java.util.HashMap;
+import java.util.Vector;
+
+import edu.gullick.physics2D.Particle;
+
+public class WordNode extends Particle{
+	
+	private int diameter = 0;
+	
+	private Vector<WordAttraction> attractions = new Vector<WordAttraction>();
+
+	private boolean nodeOpen = false;
+	private boolean userAdded = false;
+	private String word = "";
+	private double frequency = 0D;
+	private Color color = new Color(0);
+	private HashMap<Object, Object> attributes = new HashMap<Object, Object>();
+	private WordNode parent = null;
+		
+	public WordNode(float x, float y, float w, Color color, String word, double frequency, int diameter) {
+		super(w);
+		this.position.setX(x);
+		this.position.setY(y);
+		this.color = color;
+		this.word = word;
+		this.frequency = frequency;
+		this.diameter = diameter;
+	
+	}
+	
+	public void setAttribute(Object key, Object value){
+		attributes.put(key,value);
+	}
+	
+	public void removeAttribute(Object key){
+		attributes.remove(key);
+	}
+	
+	public Object getAttribute(Object key){
+		return attributes.get(key);
+	}
+
+	public int getDiameter() {
+		return diameter;
+	}
+
+	public void setDiameter(int radius) {
+		this.diameter = radius;
+	}
+
+	public boolean isNodeOpen() {
+		return nodeOpen;
+	}
+
+	public void setNodeOpen(boolean nodeOpen) {
+		this.nodeOpen = nodeOpen;
+	}
+
+	public String getWord() {
+		return word;
+	}
+
+	public void setWord(String word) {
+		this.word = word;
+	}
+
+	public double getFrequency() {
+		return frequency;
+	}
+
+	public void setFrequency(double frequency) {
+		this.frequency = frequency;
+	}
+
+	public Color getColor() {
+		return color;
+	}
+
+	public void setColor(Color color) {
+		this.color = color;
+	}
+
+	public HashMap<Object, Object> getAttributes() {
+		return attributes;
+	}
+
+	public void setAttributes(HashMap<Object, Object> attributes) {
+		this.attributes = attributes;
+	}
+
+	public Vector<WordAttraction> getAttractions() {
+		return attractions;
+	}
+	public void setAttractions(Vector<WordAttraction> attractions) {
+		this.attractions = attractions;
+	}
+
+	public boolean getUserAdded(){
+		return userAdded;
+	}
+	
+	public void setUserAdded(boolean x){
+		userAdded = x;
+	}
+
+	public void setParent(WordNode parent) {
+		this.parent = parent;
+	}
+
+	public WordNode getParent() {
+		return parent;
+	}
+
+}
