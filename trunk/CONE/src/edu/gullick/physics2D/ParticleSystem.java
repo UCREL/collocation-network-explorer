@@ -258,4 +258,17 @@ public class ParticleSystem
 	  customForces.remove( f );
   }
   
+  public final Spring getSpring(Particle a, Particle b){
+	  for(int x = 0; x < springs.size(); x++){
+		  Spring temp = springs.get(x);
+		  Particle oneEnd = temp.getOneEnd();
+		  Particle otherEnd = temp.getTheOtherEnd();
+		  if( (a == oneEnd && b == otherEnd ) | (b == oneEnd && a == otherEnd)){
+			  return temp;
+		  }
+	  }	  
+	  return null;
+		
+  }
+  
 }
