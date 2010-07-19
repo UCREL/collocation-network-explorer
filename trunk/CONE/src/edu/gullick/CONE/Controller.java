@@ -465,7 +465,6 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 			wn.setMass(2147483647);
 			wn.makeFixed();
 			Vector<LinkInformation> neighbours = wordIndex.lookupWordNeighbours(wn.getWord());
-			
 			for(int x = 0;  x < neighbours.size();x++){
 				LinkInformation tempInfo = neighbours.get(x);
 				String word = "";
@@ -535,9 +534,8 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	
 	public void closeNode(WordNode wn){
 		boolean toDeleteNode = true;
-		Vector<WordLink> links = wn.getLinks();
 		Vector<WordNode> neighbours = wn.getNeighbours();
-		Vector<WordAttraction> attractions = wn.getAttractions();
+
 		for(int x = neighbours.size() - 1; x >=0; x--){
 			WordNode tempNode = neighbours.get(x);
 
@@ -579,25 +577,6 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		
 		wn.setNodeOpen(false);
 		wn.setMass(1);
-	}
-	
-	
-	
-	
-	public void addNodeToPhysics(WordNode wn, WordNode parent){
-		physics.setPaused(true);
-		wn.setParent(parent);
-		physics.addParticle(wn);
-		
-		
-		for(int x = 0; x < physics.getParticles().size(); x++){
-			WordNode tempwn = (WordNode) physics.getParticles().get(x);
-			if(tempwn != wn){
-				physics.addAttraction(new WordAttraction(wn, physics.getParticles().get(x), -10000, 0));
-			}
-		}
-		
-		physics.setPaused(false);
 	}
 }	
 		
