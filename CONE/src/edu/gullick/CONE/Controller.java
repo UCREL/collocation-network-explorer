@@ -546,7 +546,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				currentNodes.remove(tempNode.getWord());
 			}else if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() > 2){
 				
-				//TODO delete hanging nodes
+				//TODO delete hanging nodes!
 				
 				//remove link, but dont delete node
 				WordLink tempSpring = (WordLink) physics.getSpring(tempNode, wn);
