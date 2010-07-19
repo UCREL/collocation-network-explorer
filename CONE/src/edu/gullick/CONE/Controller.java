@@ -474,52 +474,56 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				}else{
 					word = tempInfo.getWord1().trim();
 				}
-				
-				WordNode tempNode = null;
-				
-				if(currentNodes.containsKey(word)){
-					// current node Exists
-					tempNode = currentNodes.get(word);	
-
-						
-				}else{
-					//node doesnt already exist (so have to create a new node first)
-					tempNode = new WordNode( wn.position().x() +25 + ((int)(100*Math.random())), wn.position().y() + ((int)(100*Math.random())), 1, Color.BLUE,  word, 0, 10);
-					physics.addParticle(tempNode);
-					currentNodes.put(word.trim(), tempNode);
-
-				}
-			
-				
-				if(physics.getSpring(tempNode, wn) == null){
-		
-					WordLink tempSpring = new WordLink(wn,tempNode,100,0.2F,0.1F,Color.BLUE, (int) Math.max(tempInfo.getAffinity(),0), 1);
-					physics.addSpring(tempSpring);
+				if(!wn.getWord().equals(word)){
+								
+					WordNode tempNode = null;
 					
-					tempNode.addNeighbour(wn);
-					wn.addNeighbour(tempNode);
-
-					
-					tempNode.addLink(tempSpring);
-					wn.addLink(tempSpring);
-					
-					
-					//add a repulsion between every other node and this one
-					for(int a = 0; a < physics.getParticles().size(); a++){
-						WordNode n = (WordNode) physics.getParticles().get(a);
-						
-						if(n != tempNode ){
-							WordAttraction tempAttraction = new WordAttraction(tempNode,n, -10000, 15);
-							n.addAttraction(tempAttraction);
-							tempNode.addAttraction(tempAttraction);
-							physics.addAttraction( tempAttraction);
-						}	
+					if(currentNodes.containsKey(word)){
+						// current node Exists
+						tempNode = currentNodes.get(word);	
+	
+							
+					}else{
+						//node doesnt already exist (so have to create a new node first)
+						tempNode = new WordNode( wn.position().x() +25 + ((int)(100*Math.random())), wn.position().y() + ((int)(100*Math.random())), 1, Color.BLUE,  word, 0, 10);
+						physics.addParticle(tempNode);
+						currentNodes.put(word.trim(), tempNode);
+	
 					}
+				
 					
+					if(physics.getSpring(tempNode, wn) == null){
+			
+						WordLink tempSpring = new WordLink(wn,tempNode,100,0.2F,0.1F,Color.BLUE, (int) Math.max(tempInfo.getAffinity(),0), 1);
+						physics.addSpring(tempSpring);
+						
+						tempNode.addNeighbour(wn);
+						wn.addNeighbour(tempNode);
+	
+						
+						tempNode.addLink(tempSpring);
+						wn.addLink(tempSpring);
+						
+						
+						//add a repulsion between every other node and this one
+						for(int a = 0; a < physics.getParticles().size(); a++){
+							WordNode n = (WordNode) physics.getParticles().get(a);
+							
+							if(n != tempNode ){
+								WordAttraction tempAttraction = new WordAttraction(tempNode,n, -10000, 15);
+								n.addAttraction(tempAttraction);
+								tempNode.addAttraction(tempAttraction);
+								physics.addAttraction( tempAttraction);
+							}	
+						}
+						
+					}
+					wn.setNodeOpen(true);
+					wn.makeFree();
 				}
-				wn.setNodeOpen(true);
-				wn.makeFree();
 			}
+			
+			
 		}catch (Exception e) {}
 	}
 	
@@ -530,6 +534,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	}
 	
 	public void closeNode(WordNode wn){
+		boolean toDeleteNode = true;
 		Vector<WordLink> links = wn.getLinks();
 		Vector<WordNode> neighbours = wn.getNeighbours();
 		Vector<WordAttraction> attractions = wn.getAttractions();
@@ -544,7 +549,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				physics.removeSpring(tempSpring);
 				physics.removeParticle(tempNode);
 				currentNodes.remove(tempNode.getWord());
-			}else if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() > 2){
+			}else if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() > 1){
 				
 				//TODO delete hanging nodes!
 				
@@ -561,10 +566,20 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				wn.removeLink(tempSpring);
 				
 				
-			}else if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() == 2){
-				//do nothing...
+			}else if(tempNode.isNodeOpen()){
+				toDeleteNode = false;
+				System.out.println(tempNode.getWord() + " is open and attached.");
 			}
+			
 		}
+		
+		if(toDeleteNode){
+			physics.removeParticle(wn);
+			currentNodes.remove(wn.getWord());
+			removeAllAttractionsToNode(wn);
+		}
+		
+		
 		wn.setNodeOpen(false);
 		wn.setMass(1);
 	}
