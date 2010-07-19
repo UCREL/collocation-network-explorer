@@ -187,6 +187,7 @@ public class GUI{
 		mainPanel.add(progBar,  BorderLayout.SOUTH);
 		progBar.setStringPainted(true);
 		setProgressBarString("No data loaded.");
+		theFrame.setIconImage(theLogo.getImage());
 		
 		/*Starting the screen, and making the frame visable*/
 		theScreen.init();	

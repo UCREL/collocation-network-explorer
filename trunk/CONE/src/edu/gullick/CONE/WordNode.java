@@ -15,7 +15,9 @@ public class WordNode extends Particle{
 	private int diameter = 0;
 	
 	private Vector<WordAttraction> attractions = new Vector<WordAttraction>();
-
+	private Vector<WordLink> links = new Vector<WordLink>();
+	private Vector<WordNode> neighbours = new Vector<WordNode>();
+	
 	private boolean nodeOpen = false;
 	private boolean userAdded = false;
 	private String word = "";
@@ -32,6 +34,9 @@ public class WordNode extends Particle{
 		this.word = word;
 		this.frequency = frequency;
 		this.diameter = diameter;
+	 attractions = new Vector<WordAttraction>();
+	 links = new Vector<WordLink>();
+ neighbours = new Vector<WordNode>();
 	
 	}
 	
@@ -117,5 +122,47 @@ public class WordNode extends Particle{
 	public WordNode getParent() {
 		return parent;
 	}
+
+	public void setLinks(Vector<WordLink> links) {
+		this.links = links;
+	}
+
+	public Vector<WordLink> getLinks() {
+		return links;
+	}
+
+	public void setNeighbours(Vector<WordNode> neighbours) {
+		this.neighbours = neighbours;
+	}
+
+	public Vector<WordNode> getNeighbours() {
+		return neighbours;
+	}
+	
+	
+	public void addAttraction(WordAttraction x){
+		attractions.add(x);
+	}
+	
+	public void removeAttraction(WordAttraction x){
+		attractions.remove(x);
+	}
+	
+	public void addLink(WordLink x){
+		links.add(x);
+	}
+	
+	public void removeLink(WordLink x){
+		links.remove(x);
+	}
+	
+	public void addNeighbour(WordNode x){
+		neighbours.add(x);
+	}
+	
+	public void removeNeighbour(WordNode x){
+		neighbours.remove(x);
+	}
+
 
 }

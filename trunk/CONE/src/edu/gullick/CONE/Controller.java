@@ -12,6 +12,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.io.File;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
@@ -50,6 +51,8 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	
 	private boolean addingNewNode = false;
 	private String newNodeWord = "undefined";
+	
+	private HashMap<String, WordNode> currentNodes = new HashMap<String,WordNode>();
 		
 	
 	// normal execution, ran as an application
@@ -77,9 +80,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				
 				try{
 					physics.step();
-				}catch(Exception e){
-					e.printStackTrace();
-				}
+				}catch(Exception e){}
 				
 				
 			}
@@ -159,6 +160,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 			theScreen.setXOffset(0);
 			theScreen.setYOffset(0);
 			theScreen.resetZoom();
+			currentNodes.clear();
 			theGUI.theFrame.requestFocus();
 		}else if(e.getSource() == theGUI.centerButton){
 			/*
@@ -407,6 +409,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				//TODO add a new Node to physics
 				WordNode temp = new WordNode((int)((mouseEvent.getX() / theScreen.getZoomLevel()) - theScreen.getXoffset()   ), (int)((mouseEvent.getY() / theScreen.getZoomLevel()) - theScreen.getYoffset()   ), 1, Color.BLUE,  newNodeWord, 0, 10);
 				physics.addParticle(temp);
+				currentNodes.put(newNodeWord.trim(), temp);
 				addingNewNode = false;
 				theScreen.setFollowPointer(false,"");
 			}else{
@@ -458,38 +461,113 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	 
 	
 	public void openNode(WordNode wn){
-		//physics.setPaused(true);
-		wn.makeFixed();
-		wn.setMass(2147483647);
 		try {
+			wn.setMass(2147483647);
+			wn.makeFixed();
 			Vector<LinkInformation> neighbours = wordIndex.lookupWordNeighbours(wn.getWord());
-		
+			
 			for(int x = 0;  x < neighbours.size();x++){
-				LinkInformation temp = neighbours.get(x);
-				String word = "undefined";
-				if(wn.getWord().equals(temp.getWord1())){
-					word = temp.getWord2();
+				LinkInformation tempInfo = neighbours.get(x);
+				String word = "";
+				if(wn.getWord().equals(tempInfo.getWord1())){
+					word = tempInfo.getWord2().trim();
 				}else{
-					word = temp.getWord1();
+					word = tempInfo.getWord1().trim();
 				}
-				WordNode p = new WordNode(wn.position().x() + (int)((Math.random()+ 0.2F)*100), wn.position().y() +  (int)((Math.random()+ 0.2F)*100), 1, Color.BLUE, word , 0, 10);
-				WordLink l = new WordLink(p, wn, (float)    100     , 0.2F, 0.2F, Color.RED, (int) (5* Math.max(temp.getAffinity(), 0)), 1);
-				addNodeToPhysics(p, wn);
-				//physics.addParticle(p);
-				physics.addSpring(l);
+				
+				WordNode tempNode = null;
+				
+				if(currentNodes.containsKey(word)){
+					// current node Exists
+					tempNode = currentNodes.get(word);	
+
+						
+				}else{
+					//node doesnt already exist (so have to create a new node first)
+					tempNode = new WordNode( wn.position().x() +25 + ((int)(100*Math.random())), wn.position().y() + ((int)(100*Math.random())), 1, Color.BLUE,  word, 0, 10);
+					physics.addParticle(tempNode);
+					currentNodes.put(word.trim(), tempNode);
+
+				}
+			
+				
+				if(physics.getSpring(tempNode, wn) == null){
+		
+					WordLink tempSpring = new WordLink(wn,tempNode,100,0.2F,0.1F,Color.BLUE, (int) Math.max(tempInfo.getAffinity(),0), 1);
+					physics.addSpring(tempSpring);
+					
+					tempNode.addNeighbour(wn);
+					wn.addNeighbour(tempNode);
+
+					
+					tempNode.addLink(tempSpring);
+					wn.addLink(tempSpring);
+					
+					
+					//add a repulsion between every other node and this one
+					for(int a = 0; a < physics.getParticles().size(); a++){
+						WordNode n = (WordNode) physics.getParticles().get(a);
+						
+						if(n != tempNode ){
+							WordAttraction tempAttraction = new WordAttraction(tempNode,n, -10000, 15);
+							n.addAttraction(tempAttraction);
+							tempNode.addAttraction(tempAttraction);
+							physics.addAttraction( tempAttraction);
+						}	
+					}
+					
+				}
+				wn.setNodeOpen(true);
+				wn.makeFree();
 			}
-			wn.setNodeOpen(true);
-			//wn.makeFree();
-			//physics.setPaused(false);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		}catch (Exception e) {}
+	}
+	
+	public void removeAllAttractionsToNode(WordNode wn){
+		for(int x = 0;x < wn.getAttractions().size();x++){
+			physics.removeAttraction(wn.getAttractions().get(x));
 		}
 	}
 	
 	public void closeNode(WordNode wn){
-		
+		Vector<WordLink> links = wn.getLinks();
+		Vector<WordNode> neighbours = wn.getNeighbours();
+		Vector<WordAttraction> attractions = wn.getAttractions();
+		for(int x = neighbours.size() - 1; x >=0; x--){
+			WordNode tempNode = neighbours.get(x);
+
+			if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() == 1){
+				// other node is a closed node, and only connected to this one. Remove it
+				WordLink tempSpring = (WordLink) physics.getSpring(tempNode, wn);
+				removeAllAttractionsToNode(tempNode);
+				wn.getNeighbours().remove(tempNode);
+				physics.removeSpring(tempSpring);
+				physics.removeParticle(tempNode);
+				currentNodes.remove(tempNode.getWord());
+			}else if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() != 1){
+				//remove link, but dont delete node
+				WordLink tempSpring = (WordLink) physics.getSpring(tempNode, wn);
+				
+				//remove references to each other
+				wn.getNeighbours().remove(tempNode);
+				tempNode.getNeighbours().remove(wn);
+				
+				//remove spring connecting them
+				physics.removeSpring(tempSpring);
+				tempNode.removeLink(tempSpring);
+				wn.removeLink(tempSpring);
+				
+				
+			}else if(tempNode.isNodeOpen() && tempNode.getNeighbours().size() != 1){
+				//do nothing...
+			}
+		}
+		wn.setNodeOpen(false);
+		wn.setMass(1);
 	}
+	
+	
+	
 	
 	public void addNodeToPhysics(WordNode wn, WordNode parent){
 		physics.setPaused(true);
