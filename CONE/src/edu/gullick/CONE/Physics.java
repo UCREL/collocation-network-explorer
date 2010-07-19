@@ -25,11 +25,13 @@ public class Physics extends ParticleSystem {
 	
 			
 	public void step() {
+		
 		if(!paused){
 			preStep();
 			tick(1F);
 			postStep();
 		}
+		
 		
 	}
 	
