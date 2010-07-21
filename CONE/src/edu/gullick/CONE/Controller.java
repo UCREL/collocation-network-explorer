@@ -38,7 +38,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	Screen theScreen = null;
 	GUI theGUI = null;
 	Controller theController = null;
-	
+	SidePane sidePane = null;
 	
 	 WordNode beingDragged = null;
 	 boolean dragging = false;
@@ -87,6 +87,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		}, 0, 67); 
 		
 		wordIndex = new WordIndex();
+		sidePane = new SidePane(this);
 		theScreen = new Screen(physics);
 		theGUI = new GUI(this,theScreen,physics,wordIndex, WIDTH,HEIGHT);
 		theScreen.addKeyListener(this);
@@ -242,7 +243,34 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	    }else if (e.getSource() == theGUI.zoomOutButton) {
 			theScreen.zoomOut();
 			theGUI.theFrame.requestFocus();
+	    } else if(e.getSource() == sidePane.searchButton){
+	    	System.out.println(sidePane.getInputText().trim()   );
+	    	if(wordIndex.lookUpWord(  sidePane.getInputText().trim()      )  == false ){
+	    		sidePane.setOutputText("That word is not significant in the corpus.");
+	    	}else{
+	    		Vector<LinkInformation> results = null;
+	    		try {
+					results = wordIndex.lookupWordNeighbours( sidePane.getInputText().trim() );
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+	    		
+	    		if(results != null){
+	    			String toSet = "";
+	    			for(int x =0; x < results.size();x++){
+	    				toSet += results.get(x).getWord1() + " : " + results.get(x).getWord2() + "  : " +results.get(x).getAffinity() +   "\n";
+	    			}
+	    			sidePane.setOutputText(toSet);
+	    		}else{
+	    			sidePane.setOutputText("Sorry, there was an error whilst querying the cdata file.");
+	    		}
+	    		
+	    	}
+	    	
+	    	
 	    }
+
 	}
 
 	
@@ -311,7 +339,6 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 			}
 			theGUI.theFrame.requestFocus();
 	    }
-
 		
 	}
 
