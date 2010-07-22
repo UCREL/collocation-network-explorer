@@ -54,6 +54,7 @@ public class GUI{
 	public JMenuItem pauseButton = new  JRadioButtonMenuItem("Pause Physics");
 	public JMenuItem smoothFontButton = new  JRadioButtonMenuItem("Smooth Font");
 	public JMenuItem smoothAnimationButton = new  JRadioButtonMenuItem("Smooth Animation");
+	public JMenuItem showIndex = new  JRadioButtonMenuItem("Show Index");
 	public JMenuItem zoomInButton = new  JMenuItem("Zoom In");
 	public JMenuItem zoomOutButton = new  JMenuItem("Zoom Out");
 	
@@ -142,7 +143,11 @@ public class GUI{
 		pauseButton.addItemListener(theController);
 		toolsMenu.add(pauseButton);
 		pauseButton.setAccelerator(KeyStroke.getKeyStroke('p'));
-		
+
+		showIndex.setSelected(false);
+		showIndex.addItemListener(theController);
+		toolsMenu.add(showIndex);
+		//showIndex.setAccelerator(KeyStroke.getKeyStroke('p'));
 
 		zoomInButton.addActionListener(theController);
 		toolsMenu.add(zoomInButton);

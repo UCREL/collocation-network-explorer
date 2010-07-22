@@ -11,6 +11,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Timer;
@@ -24,7 +26,7 @@ import javax.swing.SwingWorker;
 
 
 
-public class Controller extends JApplet implements ActionListener, ItemListener, KeyListener, MouseListener, MouseMotionListener{
+public class Controller extends JApplet implements ActionListener, ItemListener, KeyListener, MouseListener, MouseMotionListener, WindowListener{
 	 
 
 	private static final long serialVersionUID = 1L;
@@ -338,6 +340,14 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				physics.setPaused(true);
 			}
 			theGUI.theFrame.requestFocus();
+	    }else if (source == theGUI.showIndex) {
+			if (e.getStateChange() == ItemEvent.DESELECTED){
+				//
+				sidePane.theFrame.setVisible(false); 
+			}else{
+				sidePane.theFrame.setVisible(true); 
+			}
+			theGUI.theFrame.requestFocus();
 	    }
 		
 	}
@@ -520,7 +530,11 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 					
 					if(physics.getSpring(tempNode, wn) == null){
 			
-						WordLink tempSpring = new WordLink(wn,tempNode,100,0.2F,0.1F,Color.BLUE, (int) Math.max(tempInfo.getAffinity(),0), 1);
+						double offset = 0-wordIndex.minAffinity;
+						double lineLength = 500 - (((tempInfo.getAffinity() + offset)/(wordIndex.maxAffinity + offset))*400) ;
+						double lineWidth = 50 - (lineLength/10);
+						WordLink tempSpring = new WordLink(wn,tempNode,(int)lineLength,0.2F,0.4F,Color.BLUE, (int)lineWidth, 1);
+						
 						physics.addSpring(tempSpring);
 						
 						tempNode.addNeighbour(wn);
@@ -604,6 +618,72 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		
 		wn.setNodeOpen(false);
 		wn.setMass(1);
+	}
+
+
+
+
+	@Override
+	public void windowOpened(WindowEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
+
+	@Override
+	public void windowClosing(WindowEvent e) {
+		// TODO Auto-generated method stub
+		sidePane.theFrame.setVisible(false);
+		theGUI.showIndex.setSelected(false);
+		
+	}
+
+
+
+
+	@Override
+	public void windowClosed(WindowEvent e) {
+		// TODO Auto-generated method stub
+	
+		
+	}
+
+
+
+
+	@Override
+	public void windowIconified(WindowEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
+
+	@Override
+	public void windowDeiconified(WindowEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
+
+	@Override
+	public void windowActivated(WindowEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
+
+	@Override
+	public void windowDeactivated(WindowEvent e) {
+		
+		
 	}
 }	
 		
