@@ -44,7 +44,7 @@ public class SidePane{
 
 		
 		/*Final frame configurations*/
-		theFrame.setDefaultCloseOperation(3);
+		theFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		theFrame.setContentPane(mainPanel);
 		mainPanel.add(inputField,BorderLayout.NORTH);
 		mainPanel.add(searchButton,BorderLayout.SOUTH);
@@ -53,9 +53,10 @@ public class SidePane{
 		/*Setting up the progress bar*/
 		
 		searchButton.addActionListener(theDriver);
+		theFrame.addWindowListener(theDriver);
 
 		/*Starting the screen, and making the frame visible*/
-		theFrame.setVisible(true);
+		//theFrame.setVisible(true);
 		theFrame.pack();
 	}
 	

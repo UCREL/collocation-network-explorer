@@ -18,6 +18,8 @@ public class WordIndex{
 
 	private HashMap<String,Vector<Integer>> index = new HashMap<String,Vector<Integer>>();
 	private String theFileName = "";
+	public Double maxAffinity = Double.MIN_VALUE;
+	public Double minAffinity = Double.MAX_VALUE;
 
 	
 	//TODO: this is horrible - re-do it so that it uses an XML parser.
@@ -91,8 +93,20 @@ public class WordIndex{
 		            matcher = collocationPattern.matcher( line );
 		            if(matcher.find() ){
 		            	if(count == lineNumbers.get(currentPos)){
-		            		neighbours.add(new LinkInformation(matcher.group(4),matcher.group(5), Double.parseDouble(matcher.group(1)),Double.parseDouble(matcher.group(2)), matcher.group(3)));
-		               		currentPos++;
+		            		double affinity =  Double.parseDouble(matcher.group(1));
+		            		
+		            		neighbours.add(new LinkInformation(matcher.group(4),matcher.group(5),affinity,Double.parseDouble(matcher.group(2)), matcher.group(3)));
+		            		if(affinity > maxAffinity){
+		               			maxAffinity = affinity;
+		               		}
+		               		
+		               		if(affinity < minAffinity){
+		               			minAffinity = affinity;
+		               		}
+		               		
+		            		
+		            		
+		            		currentPos++;
 		            		count++;
 		            	}else{
 		            		count++;
