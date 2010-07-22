@@ -25,6 +25,8 @@ public class WordNode extends Particle{
 	private Color color = new Color(0);
 	private HashMap<Object, Object> attributes = new HashMap<Object, Object>();
 	private WordNode parent = null;
+	
+	public boolean isHoveredOver = false;
 		
 	public WordNode(float x, float y, float w, Color color, String word, double frequency, int diameter) {
 		super(w);
