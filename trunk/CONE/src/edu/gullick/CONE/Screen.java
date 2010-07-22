@@ -1,6 +1,8 @@
 package edu.gullick.CONE;
 
 
+import java.util.Vector;
+
 import processing.core.PApplet;
 import processing.core.PFont;
 
@@ -139,9 +141,33 @@ public class Screen extends PApplet{
 			
 			for(int a = 0;  a < physics.getParticles().size(); a++){
 				 WordNode wn = (WordNode) physics.getParticles().get(a);
+				 boolean mouseOver = false;
 				 if(isOnScreen(wn)){
 					fill(wn.getColor().getRed(),wn.getColor().getGreen(),wn.getColor().getBlue(),20);
 					stroke(0,0,0,40);
+					mouseOver = mouseOver(wn);
+					if(mouseOver){
+						
+						stroke(200,0,0,60);
+						Vector<WordLink> links = wn.getLinks();
+						for(int x = 0; x < links.size(); x++){
+							WordLink wl = links.get(x);
+							if(smoothAnimation)smooth();
+							strokeWeight(wl.getThickness());
+							float[] mouse = {realX,realY};
+							
+							float[] position1 = {wl.getOneEnd().position().x(),wl.getOneEnd().position().y()};
+							float[] newPos1 = scaleUP(mouse,position1, ((WordNode)wl.getOneEnd()).getDiameter());
+							
+							float[] position2 = {wl.getTheOtherEnd().position().x(),wl.getTheOtherEnd().position().y()};
+							float[] newPos2 = scaleUP(mouse,position2,  ((WordNode)wl.getTheOtherEnd()).getDiameter());
+							
+							line(newPos1[0],newPos1[1],newPos2[0],newPos2[1]);
+							if(smoothAnimation)noSmooth();
+						}
+					}
+					
+					
 					if(drawNodes){
 						if(smoothAnimation)smooth();
 						int size = 0;

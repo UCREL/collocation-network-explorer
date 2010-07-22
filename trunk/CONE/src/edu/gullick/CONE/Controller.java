@@ -550,7 +550,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 							WordNode n = (WordNode) physics.getParticles().get(a);
 							
 							if(n != tempNode ){
-								WordAttraction tempAttraction = new WordAttraction(tempNode,n, -10000, 15);
+								WordAttraction tempAttraction = new WordAttraction(tempNode,n, -50000, 15);
 								n.addAttraction(tempAttraction);
 								tempNode.addAttraction(tempAttraction);
 								physics.addAttraction( tempAttraction);
