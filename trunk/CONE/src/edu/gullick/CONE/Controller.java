@@ -579,7 +579,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 
 		for(int x = neighbours.size() - 1; x >=0; x--){
 			WordNode tempNode = neighbours.get(x);
-
+//TODO: make more efficient
 			if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() == 1){
 				// other node is a closed node, and only connected to this one. Remove it
 				WordLink tempSpring = (WordLink) physics.getSpring(tempNode, wn);
