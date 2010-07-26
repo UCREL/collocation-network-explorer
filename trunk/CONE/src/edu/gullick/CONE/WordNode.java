@@ -165,6 +165,16 @@ public class WordNode extends Particle{
 	public void removeNeighbour(WordNode x){
 		neighbours.remove(x);
 	}
+	
+	public WordLink getSpringTo(WordNode x){
+		for(int q = 0; q < links.size(); q++){
+			WordLink temp = links.get(q);
+			if(temp.getOneEnd() == x || temp.getTheOtherEnd() == x ){
+				return temp;
+			}
+		}
+		return null;
+	}
 
 
 }

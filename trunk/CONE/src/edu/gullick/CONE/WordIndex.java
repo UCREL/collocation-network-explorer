@@ -20,6 +20,9 @@ public class WordIndex{
 	private String theFileName = "";
 	public Double maxAffinity = Double.MIN_VALUE;
 	public Double minAffinity = Double.MAX_VALUE;
+	public Double maxTScore = Double.MIN_VALUE;
+	public Double minTScore = Double.MAX_VALUE;
+	public Double tScoreFilterValue = 0D;
 
 	
 	//TODO: this is horrible - re-do it so that it uses an XML parser.
@@ -51,6 +54,24 @@ public class WordIndex{
 			while (( line = input.readLine()) != null){            
 	            matcher = collocationPattern.matcher( line );
 	            while ( matcher.find() ) {
+	            	
+	            	double affinity =  Double.parseDouble(matcher.group(1));
+	            	if(affinity > maxAffinity){
+               			maxAffinity = affinity;
+               		}
+               		if(affinity < minAffinity){
+               			minAffinity = affinity;
+               		}
+               		
+	            	double tscore =  Double.parseDouble(matcher.group(2));
+	            	if(affinity > maxTScore){
+               			maxTScore = tscore;
+               		}
+               		if(affinity < minTScore){
+               			minTScore = tscore;
+               		}
+               		
+               		
 	            	addToIndex( matcher.group(4), count);
 	            	addToIndex( matcher.group(5), count);
 	            	theGUI.setProgressBarLevel(count+1);
@@ -61,6 +82,7 @@ public class WordIndex{
 	          
 			}
 	    	
+			setTscoreFilter(20);
 
 	}
 
@@ -85,28 +107,14 @@ public class WordIndex{
 		
 		for(int x = 0; x < lineNumbers.size();x++){
 			try {
-				
-	
-			
-				
 				while (( line = input.readLine()) != null){            
 		            matcher = collocationPattern.matcher( line );
 		            if(matcher.find() ){
 		            	if(count == lineNumbers.get(currentPos)){
-		            		double affinity =  Double.parseDouble(matcher.group(1));
-		            		
-		            		neighbours.add(new LinkInformation(matcher.group(4),matcher.group(5),affinity,Double.parseDouble(matcher.group(2)), matcher.group(3)));
-		            		if(affinity > maxAffinity){
-		               			maxAffinity = affinity;
-		               		}
-		               		
-		               		if(affinity < minAffinity){
-		               			minAffinity = affinity;
-		               		}
-		               		
-		            		
-		            		
 		            		currentPos++;
+		            		if(Double.parseDouble(matcher.group(2)) > tScoreFilterValue){
+		            			neighbours.add(new LinkInformation(matcher.group(4),matcher.group(5),Double.parseDouble(matcher.group(1)),Double.parseDouble(matcher.group(2)), matcher.group(3)));
+		            		}
 		            		count++;
 		            	}else{
 		            		count++;
@@ -150,8 +158,17 @@ public class WordIndex{
 			}
 	}
 	
-
-
+	/*
+	 * This function takes a PERCENTAGE to allow and modifies the tscore value appropriately
+	 * 
+	 */
+	public void setTscoreFilter(int x){
+		tScoreFilterValue = minTScore + (((maxTScore - minTScore)/100)*(x));
+	}
+	
+	public Double getTscoreFilter(){
+		return tScoreFilterValue;
+	}
 
 	
 		

@@ -197,7 +197,7 @@ public class Screen extends PApplet{
 						
 						if(mouseOver(wn)){
 							fill(0,255);
-							textFontSize = 28;
+							textFontSize = 36;
 						}else{
 							fill(0,120);
 							textFontSize = 14;
