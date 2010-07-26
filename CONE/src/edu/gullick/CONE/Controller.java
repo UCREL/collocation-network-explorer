@@ -499,7 +499,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	
 	public void openNode(WordNode wn){
 		try {
-			wn.setMass(1147483647);
+			wn.setMass(2147483647);
 			wn.makeFixed();
 			Vector<LinkInformation> neighbours = wordIndex.lookupWordNeighbours(wn.getWord());
 			for(int x = 0;  x < neighbours.size();x++){

@@ -18,7 +18,7 @@ public class Physics extends ParticleSystem {
 		
 	
 	public void setup(){
-		setIntegrator( ParticleSystem.MODIFIED_EULER );
+		setIntegrator( ParticleSystem.RUNGE_KUTTA );
 		
 	}
 	
