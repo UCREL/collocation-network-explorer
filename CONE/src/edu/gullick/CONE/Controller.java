@@ -499,7 +499,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	
 	public void openNode(WordNode wn){
 		try {
-			wn.setMass(2147483647);
+			wn.setMass(1147483647);
 			wn.makeFixed();
 			Vector<LinkInformation> neighbours = wordIndex.lookupWordNeighbours(wn.getWord());
 			for(int x = 0;  x < neighbours.size();x++){
@@ -582,7 +582,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 //TODO: make more efficient
 			if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() == 1){
 				// other node is a closed node, and only connected to this one. Remove it
-				WordLink tempSpring = (WordLink) physics.getSpring(tempNode, wn);
+				WordLink tempSpring = (WordLink) tempNode.getSpringTo(wn);
 				removeAllAttractionsToNode(tempNode);
 				wn.getNeighbours().remove(tempNode);
 				physics.removeSpring(tempSpring);
@@ -591,7 +591,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 			}else if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() > 1){
 		
 				//remove link, but dont delete node
-				WordLink tempSpring = (WordLink) physics.getSpring(tempNode, wn);
+				WordLink tempSpring = (WordLink) tempNode.getSpringTo(wn);
 				
 				//remove references to each other
 				wn.getNeighbours().remove(tempNode);
