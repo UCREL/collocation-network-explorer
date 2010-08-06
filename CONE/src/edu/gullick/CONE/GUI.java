@@ -3,6 +3,7 @@ import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.util.Vector;
 
 
 public class GUI{
@@ -10,7 +11,7 @@ public class GUI{
 	/*
 	 * GLOBAL VARIABLES
 	 */
-	
+	public Vector<HistoryObject> history = new Vector<HistoryObject>();
 	
 	// the JFrame that everything is drawn on
 	public JFrame theFrame = new JFrame("CONE: COllocation Network Explorer v0.5");
@@ -35,6 +36,7 @@ public class GUI{
 	/*JMenuBar*/
 	public JMenuBar menuBar = new JMenuBar();
 	public JMenu fileMenu = new JMenu("File");
+	public JMenu editMenu = new JMenu("Edit");
 	public JMenu toolsMenu= new JMenu("Tools");
 	public JMenu helpMenu = new JMenu("Help");
 	public JMenuItem importButton = new JMenuItem("Import Corpus");
@@ -44,8 +46,12 @@ public class GUI{
 	public JMenuItem centerButton = new JMenuItem("Center");
 	public JMenuItem addButton = new JMenuItem("Add a Word");
 	public JMenuItem tFilterButton = new JMenuItem("Adjust T-Filter");
+	public JMenuItem deleteWordButton = new JMenuItem("Delete Word");
 	public JMenuItem aboutButton = new JMenuItem("About");
 	public JMenuItem helpButton = new JMenuItem("Help");
+	public JMenuItem undoButton = new  JMenuItem("Undo");
+	public JMenuItem redoButton = new  JMenuItem("Redo");
+
 	public JMenuItem displayNodes = new  JRadioButtonMenuItem("Display Nodes");
 	public JMenuItem displayEdges = new  JRadioButtonMenuItem("Display Edges");
 	public JMenuItem displayWords = new  JRadioButtonMenuItem("Display Words");
@@ -100,7 +106,9 @@ public class GUI{
 		addButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.CTRL_MASK));
 		toolsMenu.add(tFilterButton);
 		tFilterButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
-		
+		toolsMenu.add(deleteWordButton);
+		deleteWordButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
+	
 	
 		displayNodes.setSelected(false);
 		displayNodes.addItemListener(theController);
@@ -158,6 +166,16 @@ public class GUI{
 		toolsMenu.add(zoomOutButton);
 		zoomOutButton.setAccelerator(KeyStroke.getKeyStroke('-'));
 		
+		
+		menuBar.add(editMenu);
+		undoButton.addActionListener(theController);
+		editMenu.add(undoButton);
+		undoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK));
+		redoButton.addActionListener(theController);
+		editMenu.add(redoButton);
+		redoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK));
+		redoButton.setEnabled(false);
+		
 		menuBar.add(toolsMenu);
 		helpMenu.add(helpButton);
 		helpButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.ALT_MASK));
@@ -176,6 +194,7 @@ public class GUI{
 		tFilterButton.addActionListener(theController);
 		aboutButton.addActionListener(theController);
 		helpButton.addActionListener(theController);
+		deleteWordButton.addActionListener(theController);
 		
 		
 		

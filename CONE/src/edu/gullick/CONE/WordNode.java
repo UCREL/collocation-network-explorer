@@ -24,8 +24,24 @@ public class WordNode extends Particle{
 	private double frequency = 0D;
 	private Color color = new Color(0);
 	private HashMap<Object, Object> attributes = new HashMap<Object, Object>();
-	private WordNode parent = null;
-	
+	private boolean isSelected = false;
+
+	public boolean isSelected() {
+		return isSelected;
+	}
+
+	public void setSelected(boolean isSelected) {
+		this.isSelected = isSelected;
+	}
+
+	public boolean isHoveredOver() {
+		return isHoveredOver;
+	}
+
+	public void setHoveredOver(boolean isHoveredOver) {
+		this.isHoveredOver = isHoveredOver;
+	}
+
 	public boolean isHoveredOver = false;
 		
 	public WordNode(float x, float y, float w, Color color, String word, double frequency, int diameter) {
@@ -46,8 +62,8 @@ public class WordNode extends Particle{
 		attributes.put(key,value);
 	}
 	
-	public void removeAttribute(Object key){
-		attributes.remove(key);
+	public boolean removeAttribute(Object key){
+		return (Boolean) attributes.remove(key);
 	}
 	
 	public Object getAttribute(Object key){
@@ -117,13 +133,7 @@ public class WordNode extends Particle{
 		userAdded = x;
 	}
 
-	public void setParent(WordNode parent) {
-		this.parent = parent;
-	}
 
-	public WordNode getParent() {
-		return parent;
-	}
 
 	public void setLinks(Vector<WordLink> links) {
 		this.links = links;
@@ -146,24 +156,24 @@ public class WordNode extends Particle{
 		attractions.add(x);
 	}
 	
-	public void removeAttraction(WordAttraction x){
-		attractions.remove(x);
+	public boolean removeAttraction(WordAttraction x){
+		return attractions.remove(x);
 	}
 	
 	public void addLink(WordLink x){
 		links.add(x);
 	}
 	
-	public void removeLink(WordLink x){
-		links.remove(x);
+	public boolean removeLink(WordLink x){
+		return links.remove(x);
 	}
 	
 	public void addNeighbour(WordNode x){
 		neighbours.add(x);
 	}
 	
-	public void removeNeighbour(WordNode x){
-		neighbours.remove(x);
+	public boolean removeNeighbour(WordNode x){
+		return neighbours.remove(x);
 	}
 	
 	public WordLink getSpringTo(WordNode x){

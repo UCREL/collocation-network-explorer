@@ -57,9 +57,12 @@ public class Screen extends PApplet{
 	 
 	 private boolean followPointerWithNode = false;
 	 private String wordToFollowPointer = "";
+	 private boolean drawNodeInfo = true;
 	 
 	 private int xpos = 0;
 	 private int ypos = 0;
+	 
+	 private String wordInfo = "";
 	 
 	 
 	public Screen(Physics physics){
@@ -81,9 +84,9 @@ public class Screen extends PApplet{
 			
 			background(BACK_R,BACK_G,BACK_B);
 			
-			if(drawDebug){
-				pushMatrix();
-			}
+			
+			pushMatrix();
+			
 			scale((float) zoomLevel);
 			translate((float) Xoffset ,(float)Yoffset);
 			if(followPointerWithNode){
@@ -188,13 +191,15 @@ public class Screen extends PApplet{
 						float[] newPos = scaleUP(mouse,position, size);
 						
 							//TODO change the scale of stuff..
-							ellipse(newPos[0]  , newPos[1] , size,size);
+						ellipse(newPos[0]  , newPos[1] , size,size);
 						
-						if(smoothAnimation)noSmooth();
+						if(smoothAnimation){
+							noSmooth();
+						}
 					}
 					if(drawText){
 						int textFontSize = 0;
-						
+		
 						if(mouseOver(wn)){
 							fill(0,255);
 							textFontSize = 36;
@@ -206,6 +211,10 @@ public class Screen extends PApplet{
 						if(wn.isNodeOpen()){
 							fill(180,0,0,200);
 							textFontSize +=   10;
+						}
+						
+						if(wn.isSelected()){
+							fill(0,255,0,255);
 						}
 						
 						
@@ -221,9 +230,11 @@ public class Screen extends PApplet{
 					}
 				 }
 		 	 }
+			
+			
+			popMatrix();
 			 if(drawDebug){
-				popMatrix();
-			 	fill(0x00,0x00,0x00);
+				fill(0x00,0x00,0x00);
 			 	textFont(fontA, 14);
 			 	if(smoothFont)smooth();
 			 	text("FPS:" + (int)frameRate,2,15);
@@ -236,6 +247,14 @@ public class Screen extends PApplet{
 			 	text("Xoffset: " + Xoffset,2,120);
 			 	text("Yoffset " + Yoffset,2,135);
 			 	if(smoothFont)noSmooth();
+			 }
+			 
+			 if(drawNodeInfo){
+				 fill(0x00,0x00,0x00);
+				 	textFont(fontA, 14);
+				 	if(smoothFont)smooth();
+				 	text(wordInfo,width - textWidth(wordInfo),15);
+				 	if(smoothFont)noSmooth();
 			 }
 		 }catch(Exception e){
 			 e.printStackTrace();
@@ -292,6 +311,14 @@ public class Screen extends PApplet{
 		 }
 		 return false;
 	 }
+	 
+	public void center(WordNode tempNode){
+		 /* This Function centers the display on a certain node*/
+		 	System.out.println("X  " + tempNode.position().x());
+		 	System.out.println("Y  " + tempNode.position().y());
+		 	setXoffset((int) (( (width /zoomLevel) - tempNode.position().x() ) -((width /zoomLevel) /2)   ) 				) ; 
+			setYoffset((int) (( (height /zoomLevel) - tempNode.position().y() ) - ((height /zoomLevel) /2)    )           )  ; 
+	}
 
 
 	public void setDisplayNodes(boolean x){
@@ -555,6 +582,16 @@ public class Screen extends PApplet{
 	 */
 	public int getXpos() {
 		return xpos;
+	}
+
+
+	public void setWordInfo(String wordInfo) {
+		this.wordInfo = wordInfo;
+	}
+
+
+	public String getWordInfo() {
+		return wordInfo;
 	}
 	
 }
