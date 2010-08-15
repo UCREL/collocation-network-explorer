@@ -18,6 +18,8 @@ public class WordNode extends Particle{
 	private Vector<WordLink> links = new Vector<WordLink>();
 	private Vector<WordNode> neighbours = new Vector<WordNode>();
 	
+	private Vector<LinkInformation> totalInfoFromWordIndex = null;
+	
 	private boolean nodeOpen = false;
 	private boolean userAdded = false;
 	private String word = "";
@@ -184,6 +186,14 @@ public class WordNode extends Particle{
 			}
 		}
 		return null;
+	}
+
+	public void setTotalInfoFromWordIndex(Vector<LinkInformation> totalInfoFromWOrdIndex) {
+		this.totalInfoFromWordIndex = totalInfoFromWOrdIndex;
+	}
+
+	public Vector<LinkInformation> getTotalInfoFromWordIndex() {
+		return totalInfoFromWordIndex;
 	}
 
 
