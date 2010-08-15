@@ -1,20 +1,23 @@
 package edu.gullick.CONE;
 
 public class ParticleHistory {
-	WordNode particle = null;
+	String word = "";
 	int x = 0;
 	int y = 0;
-	public ParticleHistory(WordNode particle, int x, int y) {
-		this.particle = particle;
+	public ParticleHistory(String word, int x, int y) {
+		this.word = word;
 		this.x = x;
 		this.y = y;
 	}
-	public WordNode getParticle() {
-		return particle;
+	
+	public String getWord() {
+		return word;
 	}
-	public void setParticle(WordNode particle) {
-		this.particle = particle;
+
+	public void setWord(String word) {
+		this.word = word;
 	}
+
 	public int getX() {
 		return x;
 	}

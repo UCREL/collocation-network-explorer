@@ -1,6 +1,8 @@
 package edu.gullick.CONE;
 import javax.swing.*;
+
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.Vector;
@@ -18,7 +20,7 @@ public class GUI{
 	
 	/*The JPanel that all of the components are contained within*/
 	public JPanel mainPanel = new JPanel(new BorderLayout());
-
+	public JPanel lowerPanel = new JPanel(new GridLayout(3,0));
 	/*the Processing.core.PApplet that handles the graphics*/
 	public Screen theScreen = null;
 	
@@ -50,7 +52,6 @@ public class GUI{
 	public JMenuItem aboutButton = new JMenuItem("About");
 	public JMenuItem helpButton = new JMenuItem("Help");
 	public JMenuItem undoButton = new  JMenuItem("Undo");
-	public JMenuItem redoButton = new  JMenuItem("Redo");
 
 	public JMenuItem displayNodes = new  JRadioButtonMenuItem("Display Nodes");
 	public JMenuItem displayEdges = new  JRadioButtonMenuItem("Display Edges");
@@ -68,7 +69,9 @@ public class GUI{
 	public String aboutText = "<html><b>CONE</b>: <b>CO</b>llocation <b>N</b>etwork <b>E</b>xplorer <i>v0.5</i>. <br/>Written by David Gullick at Lancaster University UK  (2010). <br/>Thanks to:<br/>Francois Taiani, <br/>Paul Rayson, <br/>John Mariani </html>";
 	public String helpText = "<html>CONE is a graphical approach to exploring large bodies of text using collocation...<html>";
 
-
+	public JSlider tfilterSlider = new JSlider(JSlider.HORIZONTAL,0,100,100);
+	public JSlider corpusSlider = new JSlider();
+	
 	/*Progress bar seen at the bottom of the page.*/
 	public JProgressBar progBar = new JProgressBar();
 	/*
@@ -171,10 +174,6 @@ public class GUI{
 		undoButton.addActionListener(theController);
 		editMenu.add(undoButton);
 		undoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, ActionEvent.CTRL_MASK));
-		redoButton.addActionListener(theController);
-		editMenu.add(redoButton);
-		redoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK));
-		redoButton.setEnabled(false);
 		
 		menuBar.add(toolsMenu);
 		helpMenu.add(helpButton);
@@ -196,6 +195,20 @@ public class GUI{
 		helpButton.addActionListener(theController);
 		deleteWordButton.addActionListener(theController);
 		
+		tfilterSlider.addChangeListener(theController);
+		tfilterSlider.setMajorTickSpacing(10);
+		tfilterSlider.setMinorTickSpacing(1);
+		tfilterSlider.setPaintTicks(true);
+		tfilterSlider.setPaintLabels(true);
+
+		
+		/*
+		corpusSlider.addChangeListener(theController);
+		corpusSlider.setMajorTickSpacing(10);
+		corpusSlider.setMinorTickSpacing(1);
+		corpusSlider.setPaintTicks(true);
+		corpusSlider.setPaintLabels(true);
+		 */
 		
 		
 		/*Adding everything to the GUI*/
@@ -208,7 +221,10 @@ public class GUI{
 		theFrame.setSize(width,height);
 	
 		/*Setting up the progress bar*/
-		mainPanel.add(progBar,  BorderLayout.SOUTH);
+		lowerPanel.add(tfilterSlider);
+		lowerPanel.add(corpusSlider);
+		lowerPanel.add(progBar);
+		mainPanel.add(lowerPanel,  BorderLayout.SOUTH);
 		progBar.setStringPainted(true);
 		setProgressBarString("No data loaded.");
 		theFrame.setIconImage(theLogo.getImage());

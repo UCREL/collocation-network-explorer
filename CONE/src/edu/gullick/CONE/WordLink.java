@@ -12,7 +12,9 @@ public class WordLink extends Spring{
 
 	private Color color = null;
 	private int thickness = 0;
-
+	private Double tscore = 0D;
+	private boolean isVisible = true;
+	
 	
 	/*
 	 * 0 for none
@@ -25,11 +27,11 @@ public class WordLink extends Spring{
 	
 	
 	
-	public WordLink(WordNode a, WordNode b, float length, float strength, float damping, Color color, int thickness, int direction) {
+	public WordLink(WordNode a, WordNode b, float length, float strength, float damping, Color color, int thickness, int direction, Double tscore) {
 		super(a, b, strength,damping, length);
 		this.thickness = thickness;
 		this.direction = direction;
-
+		this.tscore = tscore;
 	}
 
 
@@ -73,6 +75,36 @@ public class WordLink extends Spring{
 	public void setDirection(int direction) {
 		this.direction = direction;
 	}
+
+
+
+
+	public void setTscore(Double tscore) {
+		tscore = tscore;
+	}
+
+
+
+
+	public Double getTscore() {
+		return tscore;
+	}
+
+
+
+
+	public void setVisible(boolean isVisible) {
+		this.isVisible = isVisible;
+	}
+
+
+
+
+	public boolean isVisible() {
+		return isVisible;
+	}
+	
+	
 
 
 

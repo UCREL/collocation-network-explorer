@@ -22,9 +22,7 @@ public class WordIndex{
 	public Double minAffinity = Double.MAX_VALUE;
 	public Double maxTScore = Double.MIN_VALUE;
 	public Double minTScore = Double.MAX_VALUE;
-	public Double tScoreFilterValue = 0D;
 
-	
 	//TODO: this is horrible - re-do it so that it uses an XML parser.
 	public void analyzeXMLDOC(String fileName, GUI theGUI) throws Exception{
 
@@ -82,7 +80,7 @@ public class WordIndex{
 	          
 			}
 	    	
-			setTscoreFilter(20);
+
 
 	}
 
@@ -112,9 +110,8 @@ public class WordIndex{
 		            if(matcher.find() ){
 		            	if(count == lineNumbers.get(currentPos)){
 		            		currentPos++;
-		            		if(Double.parseDouble(matcher.group(2)) > tScoreFilterValue){
 		            			neighbours.add(new LinkInformation(matcher.group(4),matcher.group(5),Double.parseDouble(matcher.group(1)),Double.parseDouble(matcher.group(2)), matcher.group(3)));
-		            		}
+		            		
 		            		count++;
 		            	}else{
 		            		count++;
@@ -158,18 +155,6 @@ public class WordIndex{
 			}
 	}
 	
-	/*
-	 * This function takes a PERCENTAGE to allow and modifies the tscore value appropriately
-	 * 
-	 */
-	public void setTscoreFilter(int x){
-		tScoreFilterValue = minTScore + (((maxTScore - minTScore)/100)*(x));
-	}
-	
-	public Double getTscoreFilter(){
-		return tScoreFilterValue;
-	}
 
-	
 		
 }
