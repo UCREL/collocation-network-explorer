@@ -1,6 +1,7 @@
 package edu.gullick.CONE;
 
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,6 +14,9 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -48,7 +52,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	private HashMap<String, WordNode> currentNodes = new HashMap<String,WordNode>();
 	private Vector<HistoryObject> history = new Vector<HistoryObject>();
 	private WordNode lastSelected = null;
-
+	private Corpus currentCorpus = null;
 	
 	
 	public static void main(String[] args){
@@ -72,7 +76,8 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		theGUI = new GUI(this,theScreen,physics,wordIndex, WIDTH,HEIGHT);
 		theScreen.addMouseListener(this);
 		theScreen.addMouseMotionListener(this);
-		theScreen.setTFilter(wordIndex.maxTScore);
+		theScreen.setTFilter(wordIndex.totalMaxTScore);
+		theGUI.updateLabels(null);
 	}
 
 	/*listens for button presses in the GUI and calls other methods appropriately*/
@@ -99,7 +104,17 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 			zoomInPressed(true);
 	    }else if (e.getSource() == theGUI.zoomOutButton) {
 			zoomOutPressed(true);
-	    } else if(e.getSource() == sidePane.searchButton){
+	    } else if(e.getSource() == theGUI.linkGoogleButton){
+	    	openLinkInGoogle();
+	    } else if(e.getSource() == theGUI.linkWikipediaButton){
+	    	openLinkInWikipedia();
+	    } else if(e.getSource() == theGUI.linkWMatrixButton){
+	    	openLinkInWMatrix();
+	    } else if(e.getSource() == theGUI.linkThesaurusButton){
+	    	openLinkInThesaurus();
+	    } else if(e.getSource() == theGUI.linkDictionaryButton){
+	    	openLinkInDictionary();
+	    }   else if(e.getSource() == sidePane.searchButton){
 	    	searchPressed(false);
 	    }
 		theGUI.menuBar.requestFocus();
@@ -222,6 +237,8 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 					updateDetailsInScreen(wn);
 					
 					lastSelected = wn;
+					
+					theGUI.updateLabels(wn);
 					particleDragStartX =  xpos; 
 					particleDragStartY =  ypos; 
 					beingDragged = wn;
@@ -264,7 +281,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	public void openNode(WordNode wn, boolean addToHistory){
 		try {
 			wn.makeFixed();
-			Vector<LinkInformation> neighbours = wordIndex.lookupWordNeighbours(wn.getWord());
+			Vector<LinkInformation> neighbours = wordIndex.lookupWordNeighbours( wn.getWord(), currentCorpus);
 			for(int x = 0;  x < neighbours.size();x++){
 				LinkInformation tempInfo = neighbours.get(x);
 				String word = "";
@@ -285,8 +302,8 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 						currentNodes.put(word.trim(), tempNode);
 					}
 					if(physics.getSpring(tempNode, wn) == null){
-						double offset = 0-wordIndex.minAffinity;
-						double lineLength = 500 - (((tempInfo.getAffinity() + offset)/(wordIndex.maxAffinity + offset))*400) ;
+						double offset = 0-wordIndex.totalMinAffinity;
+						double lineLength = 500 - (((tempInfo.getAffinity() + offset)/(wordIndex.totalMaxAffinity + offset))*400) ;
 						double lineWidth = 50 - (lineLength/10);
 						WordLink tempSpring = new WordLink(wn,tempNode,(int)lineLength,0.2F,0.4F,Color.BLUE, (int)lineWidth, 1,tempInfo.getTscore());
 						physics.addSpring(tempSpring);
@@ -318,14 +335,19 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	
 	public void closeNode(WordNode wn, boolean addToHistory){
 	
-		Vector<WordNode> neighbours = wn.getNeighbours();
-	//	ProgressMonitor progmon = new ProgressMonitor(theGUI.theFrame, "", "", 0, neighbours.size());
-		//int progress = 1;
-		for(int x = neighbours.size() - 1; x >=0; x--){
-			WordNode tempNode = neighbours.get(x);
+		Vector<WordLink> links = wn.getLinks();
+		
+		for(int x = links.size() - 1; x >=0; x--){
+			WordLink tempSpring = links.get(x);
+			WordNode tempNode = null;
+			if(tempSpring.getOneEnd() == wn){
+				tempNode = (WordNode) tempSpring.getTheOtherEnd();
+			}else{
+				tempNode = (WordNode) tempSpring.getOneEnd();
+			}
+		
 			if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() == 1){
 				// other node is a closed node, and only connected to this one. Remove it
-				WordLink tempSpring = (WordLink) tempNode.getSpringTo(wn);
 			 	removeAllAttractionsToNode(tempNode);
 				wn.getNeighbours().remove(tempNode);
 				physics.removeSpring(tempSpring);
@@ -333,8 +355,6 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				wn.removeLink(tempSpring);
 				currentNodes.remove(tempNode.getWord());
 			}else if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() > 1){
-				//remove link, but dont delete node
-				WordLink tempSpring = (WordLink) tempNode.getSpringTo(wn);
 				//remove references to each other
 				wn.getNeighbours().remove(tempNode);
 				tempNode.getNeighbours().remove(wn);
@@ -343,7 +363,6 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 				tempNode.removeLink(tempSpring);
 				wn.removeLink(tempSpring);
 			}
-		//	progmon.setProgress(progress++);
 		}
 		wn.setNodeOpen(false);
 		wn.makeFree();
@@ -385,7 +404,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		Vector<LinkInformation> neighbours = null;
 		String wordInfo = "";
 		try {
-			neighbours = wordIndex.lookupWordNeighbours(wn.getWord());
+			neighbours = wordIndex.lookupWordNeighbours(wn.getWord(), currentCorpus);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -413,7 +432,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	//this function adds a node to the system, returning true if succesful, and false otherwise
 	//TODO: update to seperate thread.
 	public  WordNode addNodeToSystem(String word, int x , int y, boolean addToHistory){
-		if(!currentNodes.containsKey(word) && wordIndex.lookUpWord(word)){
+		if(!currentNodes.containsKey(word) && wordIndex.lookUpWord(word, currentCorpus)){
 			WordNode temp = new WordNode(x,y, 1, Color.BLUE,  word, 0, 10);
 		
 	
@@ -437,7 +456,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 			}
 			currentNodes.put(word.trim(), temp);
 			try {
-				temp.setTotalInfoFromWordIndex(wordIndex.lookupWordNeighbours(word));
+				temp.setTotalInfoFromWordIndex(wordIndex.lookupWordNeighbours(word, currentCorpus));
 			} catch (Exception e) {}
 			return temp;
 		}else if(currentNodes.containsKey(word)){
@@ -590,7 +609,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	        public Boolean doInBackground() {
 	        	tempString = JOptionPane.showInputDialog("Please type the word to add below:").trim(); 
 	        	
-	        	if(wordIndex.lookUpWord(tempString)){
+	        	if(wordIndex.lookUpWord(tempString, currentCorpus)){
 	        		return true;
 	        	}else{
 	        		return false;
@@ -722,12 +741,12 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	public void searchPressed(boolean addToHistory){
 		//TODO: FIX THIS PART BELOW
 		System.out.println(sidePane.getInputText().trim()   );
-    	if(wordIndex.lookUpWord(  sidePane.getInputText().trim()      )  == false ){
+    	if(wordIndex.lookUpWord(  sidePane.getInputText().trim()   , currentCorpus   )  == false ){
     		sidePane.setOutputText("That word is not significant in the corpus.");
     	}else{
     		Vector<LinkInformation> results = null;
     		try {
-				results = wordIndex.lookupWordNeighbours( sidePane.getInputText().trim() );
+				results = wordIndex.lookupWordNeighbours( sidePane.getInputText().trim(), currentCorpus );
 			} catch (Exception e1) {
 				e1.printStackTrace();
 			}
@@ -744,11 +763,13 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
     		
     	}
 	}
+	
 	public void importPressed(boolean addToHistory){
 		//TODO: fix this part below
 	    SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
 		    	String fileName = "";
 		    	Boolean userCancelled = false;
+		    	Corpus temp = null;
 		        //This method automatically gets executed in a background thread
 
 		        public Void doInBackground() {
@@ -765,7 +786,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		    	    }
 		           	try {
 						fileName = file.getName();
-		        		wordIndex.analyzeXMLDOC(file.getPath(), theGUI);
+		        		temp = wordIndex.analyzeXMLDOC(file.getPath(), theGUI);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -774,7 +795,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		        public void done() {	
 		        	if(!userCancelled){
 		        		theGUI.setProgressBarString("Completed indexing of " +  fileName + ".");
-		        		
+		        		currentCorpus = temp;
 		        	}
 		        } 
 		    }; 
@@ -787,18 +808,160 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	public void stateChanged(ChangeEvent e) {
 		if(e.getSource() == theGUI.tfilterSlider){
 			int x = theGUI.tfilterSlider.getValue();
-			Double filter = (((wordIndex.maxTScore - wordIndex.minTScore) /  100 ) * x) + wordIndex.minTScore;
-			
+			Double filter = (((wordIndex.totalMaxTScore - wordIndex.totalMinTScore) /  100 ) * x) + wordIndex.totalMinTScore;
 			theScreen.setTFilter(filter);
-			System.out.println(wordIndex.minTScore);
-			System.out.println(filter);
-			System.out.println(wordIndex.maxTScore);
+	
 		}
 		
 	}
 
+
+	/*Opens the browser at the given location in various locations*/
+	
+	public void openLinkInGoogle() {
+	        if (Desktop.isDesktopSupported()) {
+	                Desktop desktop = Desktop.getDesktop();
+	                try {
+	                	String word = null;
+	                	
+	                	if(lastSelected != null){
+	                		word = "q=" + lastSelected.getWord();
+	                	}
+	            			URI uri = new URI(
+	            				    "http", 
+	            				    "www.google.com", 
+	            				    null,
+	            				   word);
+	            	
+	                        desktop.browse(uri);
+	                } catch (Exception e) {
+	                   e.printStackTrace();
+	                }
+	        } else {
+	                // TODO: error handling
+	        }
+	    }
+	
+	public void openLinkInWikipedia() {
+        if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+               
+                
+               // http://en.wikipedia.org/w/index.php?title=Special:Search&search=dsfksdfdsf
+                try {
+                	String word = null;
+                	
+                	if(lastSelected != null){
+                		word = lastSelected.getWord();
+                	}
+            			URI uri = new URI(
+            				    "http", 
+            				    "en.wikipedia.org", 
+            				    "/wiki/" + word,
+            				   null);
+            	
+                        desktop.browse(uri);
+                } catch (Exception e) {
+                   e.printStackTrace();
+                }
+        } else {
+                // TODO: error handling
+        }
+    }
+
+	public void openLinkInWMatrix() {
+        if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+               
+                
+               // http://en.wikipedia.org/w/index.php?title=Special:Search&search=dsfksdfdsf
+                try {
+                	String word = null;
+                	
+                	if(lastSelected != null){
+                		word = lastSelected.getWord();
+                	}
+           
+            			URI uri = new URI(
+            				    "http", 
+            				    "ucrel.lancs.ac.uk", 
+            				    "/wmatrix/",
+            				   "q=" + word);
+            	
+                        desktop.browse(uri);
+                } catch (Exception e) {
+                   e.printStackTrace();
+                }
+        } else {
+                // TODO: error handling
+        }
+    }
+		
+		
+		
 	
 	
+	
+		
+		public void openLinkInDictionary() {
+        if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+               
+                
+                try {
+                	String word = null;
+                	
+                	if(lastSelected != null){
+                		word = lastSelected.getWord();
+                	}
+           
+            			URI uri = new URI(
+            				    "http", 
+            				    "dictionary.reference.com", 
+            				    "/browse/" + word,
+            				   null);
+            	
+                        desktop.browse(uri);
+                } catch (Exception e) {
+                   e.printStackTrace();
+                }
+        } else {
+                // TODO: error handling
+        }
+    }
+		
+    
+
+			
+			public void openLinkInThesaurus() {
+	        if (Desktop.isDesktopSupported()) {
+	                Desktop desktop = Desktop.getDesktop();
+	               
+	                
+	             
+	                try {
+	                	String word = null;
+	                	
+	                	if(lastSelected != null){
+	                		word = lastSelected.getWord();
+	                	}
+	           
+	            			URI uri = new URI(
+	            				    "http", 
+	            				    "thesaurus.com", 
+	            				    "/browse/" + word,
+	            				    null);
+	            	
+	                        desktop.browse(uri);
+	                } catch (Exception e) {
+	                   e.printStackTrace();
+	                }
+	        } else {
+	                // TODO: error handling
+	        }
+	    }
+			
+    
 	/*#####Unimplemented methods from interfaces below this line!!!!####*/
 	
 	public void keyPressed(KeyEvent e) {}

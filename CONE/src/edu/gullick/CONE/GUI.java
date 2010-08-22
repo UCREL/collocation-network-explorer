@@ -2,9 +2,13 @@ package edu.gullick.CONE;
 import javax.swing.*;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Vector;
 
 
@@ -41,6 +45,7 @@ public class GUI{
 	public JMenu editMenu = new JMenu("Edit");
 	public JMenu toolsMenu= new JMenu("Tools");
 	public JMenu helpMenu = new JMenu("Help");
+	public JMenu linkMenu = new JMenu("Look up a word in..");
 	public JMenuItem importButton = new JMenuItem("Import Corpus");
 	public JMenuItem cdataButton = new JMenuItem("Import .cdata file");
 	public JMenuItem prefButton = new JMenuItem("Preferences");
@@ -52,7 +57,13 @@ public class GUI{
 	public JMenuItem aboutButton = new JMenuItem("About");
 	public JMenuItem helpButton = new JMenuItem("Help");
 	public JMenuItem undoButton = new  JMenuItem("Undo");
-
+	
+	public JMenuItem	linkGoogleButton = new JMenuItem("Google.com");
+	public JMenuItem	linkWikipediaButton = new JMenuItem("Wikipedia.org");
+	public JMenuItem 	linkWMatrixButton = new JMenuItem("WMatrix");
+	public JMenuItem	linkThesaurusButton = new JMenuItem("Thesaurus.com");
+	public JMenuItem 	linkDictionaryButton = new JMenuItem("Dictionary.com");
+	
 	public JMenuItem displayNodes = new  JRadioButtonMenuItem("Display Nodes");
 	public JMenuItem displayEdges = new  JRadioButtonMenuItem("Display Edges");
 	public JMenuItem displayWords = new  JRadioButtonMenuItem("Display Words");
@@ -64,6 +75,8 @@ public class GUI{
 	public JMenuItem showIndex = new  JRadioButtonMenuItem("Show Index");
 	public JMenuItem zoomInButton = new  JMenuItem("Zoom In");
 	public JMenuItem zoomOutButton = new  JMenuItem("Zoom Out");
+
+	
 	
 	/*Strings used in the help menu choices*/
 	public String aboutText = "<html><b>CONE</b>: <b>CO</b>llocation <b>N</b>etwork <b>E</b>xplorer <i>v0.5</i>. <br/>Written by David Gullick at Lancaster University UK  (2010). <br/>Thanks to:<br/>Francois Taiani, <br/>Paul Rayson, <br/>John Mariani </html>";
@@ -87,6 +100,8 @@ public class GUI{
 		this.theWordIndex = theWordIndex;
 		
 		theLogo = createImageIcon("/data/logo.png","the logo");
+		
+	
 		
 		/*Setting up the menu*/
 		
@@ -182,6 +197,41 @@ public class GUI{
 		aboutButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.ALT_MASK));
 		menuBar.add(helpMenu);
 		
+	
+		 linkGoogleButton.setForeground(Color.BLUE);
+		 linkGoogleButton.setToolTipText("Google");
+		 linkGoogleButton.addActionListener(theController);
+		 
+
+		 linkWikipediaButton.setForeground(Color.BLUE);
+		 linkWikipediaButton.setToolTipText("Wikipeida");
+		 linkWikipediaButton.addActionListener(theController);
+
+		
+	
+		 linkWMatrixButton.setForeground(Color.BLUE);
+		 linkWMatrixButton.setToolTipText("WMatrix");
+		 linkWMatrixButton.addActionListener(theController);
+
+		 linkThesaurusButton.setForeground(Color.BLUE);
+		 linkThesaurusButton.setToolTipText("Thesaurus");
+		 linkThesaurusButton.addActionListener(theController);
+
+		 linkDictionaryButton.setForeground(Color.BLUE);
+		 linkDictionaryButton.setToolTipText("Dictionary");
+		 linkDictionaryButton.addActionListener(theController);
+
+		 
+		 
+		 
+		linkMenu.add(linkGoogleButton);
+		linkMenu.add(linkWikipediaButton);
+		linkMenu.add(linkWMatrixButton);
+		linkMenu.add(linkThesaurusButton);
+		linkMenu.add(linkDictionaryButton);
+		menuBar.add(linkMenu);
+
+		
 		
 		/*Adding action Listeners*/
 		importButton.addActionListener(theController);
@@ -265,7 +315,17 @@ return null;
 }
 }
 	
-
+public void updateLabels(WordNode wn){
+	if(wn == null){
+		linkMenu.setEnabled(false);
+		deleteWordButton.setEnabled(false);
+		linkMenu.setText("Please select a word..");
+	}else{
+		linkMenu.setEnabled(true);
+		deleteWordButton.setEnabled(true);
+		linkMenu.setText("Look up '" + wn.getWord() + "' in..");
+	}
+}
 	
 	
 
