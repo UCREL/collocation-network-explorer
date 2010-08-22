@@ -16,19 +16,22 @@ import java.util.regex.Pattern;
 
 public class WordIndex{
 
-	private HashMap<String,Vector<Integer>> index = new HashMap<String,Vector<Integer>>();
-	private String theFileName = "";
-	public Double maxAffinity = Double.MIN_VALUE;
-	public Double minAffinity = Double.MAX_VALUE;
-	public Double maxTScore = Double.MIN_VALUE;
-	public Double minTScore = Double.MAX_VALUE;
+	Double totalMinAffinity = Double.MAX_VALUE;
+	Double totalMaxAffinity = Double.MIN_VALUE;
+	Double totalMinTScore = Double.MAX_VALUE;
+	Double totalMaxTScore = Double.MIN_VALUE;
+	
+	public Corpus createCorpusInRam(String fileName){
+		Corpus toReturn = new Corpus(fileName);
+		
+		return toReturn;
+	}
 
 	//TODO: this is horrible - re-do it so that it uses an XML parser.
-	public void analyzeXMLDOC(String fileName, GUI theGUI) throws Exception{
-
-	    	File theFile = new File(fileName); 
-	    	this.theFileName = fileName;
-	    	createIndexFile();
+	public Corpus analyzeXMLDOC(String filename, GUI theGUI) throws Exception{
+			Corpus toReturn = new Corpus(filename);
+			
+	    	File theFile = new File(filename); 
 	    	BufferedReader input =  new BufferedReader(new FileReader(theFile));
 			Matcher matcher;
 			Pattern statisticsPattern = Pattern.compile("<statistics collocate_entries=\"(\\d+)\"/>");
@@ -53,25 +56,9 @@ public class WordIndex{
 	            matcher = collocationPattern.matcher( line );
 	            while ( matcher.find() ) {
 	            	
-	            	double affinity =  Double.parseDouble(matcher.group(1));
-	            	if(affinity > maxAffinity){
-               			maxAffinity = affinity;
-               		}
-               		if(affinity < minAffinity){
-               			minAffinity = affinity;
-               		}
-               		
-	            	double tscore =  Double.parseDouble(matcher.group(2));
-	            	if(affinity > maxTScore){
-               			maxTScore = tscore;
-               		}
-               		if(affinity < minTScore){
-               			minTScore = tscore;
-               		}
-               		
-               		
-	            	addToIndex( matcher.group(4), count);
-	            	addToIndex( matcher.group(5), count);
+	    
+	            	toReturn.addLink(matcher.group(4), matcher.group(5), matcher.group(1), matcher.group(2), matcher.group(3));
+             	
 	            	theGUI.setProgressBarLevel(count+1);
 	            	theGUI.setProgressBarString("Indexing " + (count+1) + "/" + totalCount + " collocates");
 	             	count++;
@@ -80,8 +67,28 @@ public class WordIndex{
 	          
 			}
 	    	
+			
+			updateTotalVals(toReturn);
+			return toReturn;
 
 
+	}
+	
+	public void updateTotalVals(Corpus corpus){
+	
+		if(totalMinAffinity > corpus.minAffinity){
+			totalMinAffinity = corpus.minAffinity;
+   		}
+   		if(totalMaxAffinity < corpus.maxAffinity){
+   			totalMaxAffinity = corpus.maxAffinity;
+   		}
+    	if(totalMinTScore > corpus.minTScore){
+    		totalMinTScore = corpus.minTScore;
+   		}
+   		if(totalMaxTScore < corpus.maxTScore){
+   			totalMaxTScore = corpus.maxTScore;
+   		}
+   		
 	}
 
 	
@@ -92,68 +99,18 @@ public class WordIndex{
 	}
 
 	// returns a list of the words direct neighbours.
-	public Vector<LinkInformation> lookupWordNeighbours(String word) throws Exception{
-		Vector<Integer> lineNumbers = index.get(word);
-		Vector<LinkInformation> neighbours = new Vector<LinkInformation>();
-		File theFile = new File(theFileName); 
-    	BufferedReader input =  new BufferedReader(new FileReader(theFile));
-		Matcher matcher;
-	    Pattern collocationPattern = Pattern.compile("<collocates affinity=\"([-\\d]\\d*\\.\\d*)\" tscore=\"([-\\d]\\d*\\.\\d*)\" freq=\"(\\d*;\\d*;\\d*;\\d*)\">(.*) (.*)</collocates>");
-		int count = 0;
-		int currentPos = 0;
-		String line = null;
-		
-		for(int x = 0; x < lineNumbers.size();x++){
-			try {
-				while (( line = input.readLine()) != null){            
-		            matcher = collocationPattern.matcher( line );
-		            if(matcher.find() ){
-		            	if(count == lineNumbers.get(currentPos)){
-		            		currentPos++;
-		            			neighbours.add(new LinkInformation(matcher.group(4),matcher.group(5),Double.parseDouble(matcher.group(1)),Double.parseDouble(matcher.group(2)), matcher.group(3)));
-		            		
-		            		count++;
-		            	}else{
-		            		count++;
-		            	}
-		            }
-				}
-				
-				
-			} catch (Exception e) {}
-		}
-		return neighbours;
+	public Vector<LinkInformation> lookupWordNeighbours( String word, Corpus theCorpus) throws Exception{
+		return theCorpus.getNeighbours(word);
 	}
 	
 	
-	//looks up a word in the corpus: checks for existence and returns information about it.
-	public boolean lookUpWord(String word){
-		if(index.containsKey(word)){
-			return true;
-		}else{
-			return false;
-		}
-	 
+	public boolean lookUpWord(String word, Corpus corpus){
+		return corpus.doesWordExist(word);
 	}
-	
 
 
-	public void createIndexFile(){
-		index = new HashMap<String,Vector<Integer>>();
-	}
 	
-	public  void addToIndex(String word, int lineNumber) throws Exception{
-			if(index.containsKey(word)){
-				Vector<Integer> temp = index.get(word);
-				temp.add(new Integer(lineNumber));
-				index.put(word,temp);
-			
-			}else{
-				Vector<Integer> temp = new Vector<Integer>();
-				temp.add(new Integer(lineNumber));
-				index.put(word,temp);
-			}
-	}
+
 	
 
 		
