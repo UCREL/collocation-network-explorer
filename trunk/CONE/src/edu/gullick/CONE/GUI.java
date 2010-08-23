@@ -82,7 +82,7 @@ public class GUI{
 	public String aboutText = "<html><b>CONE</b>: <b>CO</b>llocation <b>N</b>etwork <b>E</b>xplorer <i>v0.5</i>. <br/>Written by David Gullick at Lancaster University UK  (2010). <br/>Thanks to:<br/>Francois Taiani, <br/>Paul Rayson, <br/>John Mariani </html>";
 	public String helpText = "<html>CONE is a graphical approach to exploring large bodies of text using collocation...<html>";
 
-	public JSlider tfilterSlider = new JSlider(JSlider.HORIZONTAL,0,100,100);
+	public JSlider tfilterSlider = new JSlider(JSlider.HORIZONTAL,0,100,50);
 	public JSlider corpusSlider = new JSlider();
 	
 	/*Progress bar seen at the bottom of the page.*/
@@ -247,9 +247,11 @@ public class GUI{
 		
 		tfilterSlider.addChangeListener(theController);
 		tfilterSlider.setMajorTickSpacing(10);
-		tfilterSlider.setMinorTickSpacing(1);
+		tfilterSlider.setMinorTickSpacing(5);
 		tfilterSlider.setPaintTicks(true);
 		tfilterSlider.setPaintLabels(true);
+		//tfilterSlider.setSnapToTicks(true);
+		
 
 		
 		/*
