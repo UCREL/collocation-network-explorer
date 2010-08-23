@@ -30,6 +30,21 @@ public class Corpus {
 		return info.get(word);
 	}
 	
+	public Vector<LinkInformation> getNeighbours(String word, Double TFilterMin, Double TFilterMax){
+		Vector<LinkInformation> tempInfo = info.get(word);
+		Vector<LinkInformation> toReturn = new Vector<LinkInformation>();
+		for(int a = 0; a < tempInfo.size(); a++){
+	
+			LinkInformation li = tempInfo.get(a);
+			if(li.getTscore() >  TFilterMin && li.getTscore() < TFilterMax){
+				toReturn.add(li);
+			}
+	
+		}
+	
+		return toReturn;
+	}
+	
 	public HashMap<String, Vector<LinkInformation>> getInfo(){
 		return info;
 	}

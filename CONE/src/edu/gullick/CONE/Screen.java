@@ -64,17 +64,10 @@ public class Screen extends PApplet{
 	 
 	 private String wordInfo = "";
 	 
-	 private double TFilter = 0D;
+
 	 
-	 
-	public double getTFilter() {
-		return TFilter;
-	}
 
 
-	public void setTFilter(double tFilter) {
-		TFilter = tFilter;
-	}
 
 
 	public Screen(Physics physics){
@@ -114,7 +107,7 @@ public class Screen extends PApplet{
 				stroke(0,0,0,20);
 					for(int a = 0;  a < physics.getSprings().size(); a++){
 						WordLink wl = (WordLink) physics.getSprings().get(a);
-						if(isOnScreen(wl) && wl.getTscore() < TFilter){
+						if(isOnScreen(wl) ){
 							if(smoothAnimation)smooth();
 							strokeWeight(wl.getThickness());
 							float[] mouse = {realX,realY};
