@@ -204,18 +204,36 @@ public class Screen extends PApplet{
 					}
 					if(drawText){
 						int textFontSize = 0;
-		
+						
+						Double freq = wn.getFrequency();
+						
+						freq=freq * 50000;
+						
+						if(freq < 1){
+							textFontSize = 16;
+						}else if( freq < 25){
+							textFontSize = 20;
+						}else if( freq < 50){
+							textFontSize = 26;
+						}else if( freq < 75){
+							textFontSize = 32;
+						}else if( freq < 100){
+							textFontSize = 38;
+						}else{
+							textFontSize = 44;
+						}
+						
+						
 						if(mouseOver(wn)){
 							fill(0,255);
-							textFontSize = 36;
+							textFontSize *=2;;
 						}else{
 							fill(0,120);
-							textFontSize = 14;
 						}
 						
 						if(wn.isNodeOpen()){
 							fill(180,0,0,200);
-							textFontSize +=   10;
+							textFontSize *= 1.1;
 						}
 						
 						if(wn.isSelected()){
@@ -232,7 +250,17 @@ public class Screen extends PApplet{
 						float[] newPos = scaleUP(mouse,position, wn.getDiameter());
 						text(wn.getWord(),newPos[0]  - (textWidth(wn.getWord()) / 2)  ,newPos[1]  ) ;
 						if(smoothFont)noSmooth();
+						
+						if(!wn.isInCurrentCorpus()){
+							stroke(255,0,0,128);
+							strokeWeight(5);
+							line(newPos[0] - textFontSize,newPos[1] -textFontSize,newPos[0] + textFontSize,newPos[1] +textFontSize);
+							line(newPos[0] -textFontSize ,newPos[1] +textFontSize,newPos[0] + textFontSize,newPos[1] -textFontSize);
+						}
+						
 					}
+					
+					
 				 }
 		 	 }
 			

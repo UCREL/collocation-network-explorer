@@ -3,17 +3,20 @@ package edu.gullick.CONE;
 public class LinkInformation {
 	public String word1 = "";
 	public String word2 = "";
-	public double affinity = 0.0F;
-	public double tscore = 0.0F;
-	public String frequency = "";
+	public double affinity = 0.0D;
+	public double tscore = 0.0D;
+	public double frequency1 = 0.0D;
+	public double frequency2 = 0.0D;
 	
-	public LinkInformation(String word1,String  word2, double affinity, double tscore, String frequency){
+	public LinkInformation(String word1,String  word2, double affinity, double tscore, Double frequency1, Double frequency2){
 		this. word1 = word1;
 		this.word2 = word2;
 		this.affinity = affinity;
 		this.tscore = tscore;
-		this.frequency = frequency;
+		this.frequency1 = frequency1;
+		this.frequency2 = frequency2;
 	}
+	
 
 	public String getWord1() {
 		return word1;
@@ -47,13 +50,19 @@ public class LinkInformation {
 		this.tscore = tscore;
 	}
 
-	public String getFrequency() {
-		return frequency;
+	public double getFrequency1() {
+		return frequency1;
 	}
 
-	public void setFrequency(String frequency) {
-		this.frequency = frequency;
+	public void setFrequency1(double frequency1) {
+		this.frequency1 = frequency1;
 	}
-	
-	
+
+	public double getFrequency2() {
+		return frequency2;
+	}
+
+	public void setFrequency2(double frequency2) {
+		this.frequency2 = frequency2;
+	}
 }
