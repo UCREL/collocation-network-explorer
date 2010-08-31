@@ -334,14 +334,17 @@ public void updateLabels(WordNode wn){
 	}
 }
 
-public String makeLabelString(String s){
+public String makeLabelString(String s, int key){
 	String toReturn = "<html><font size='1'>";
 	
+		if(key%2==0){
+			toReturn += "<br/>";
+		}
 	
 		toReturn += s;
 	
 	
-	toReturn +="</html>";
+	toReturn +="</font></html>";
 	return toReturn;
 }
 
@@ -356,7 +359,7 @@ public int addCorpusToSlider(String label){
 		corpusSlider.setMaximum(1);
 		corpusSlider.setValue(1);
 		
-		JLabel l = new JLabel( makeLabelString(label));
+		JLabel l = new JLabel( makeLabelString(label, 1));
 		labels.put(1, l);
 		
 		corpusSlider.setLabelTable(labels);
@@ -370,7 +373,7 @@ public int addCorpusToSlider(String label){
 		corpusSlider.setEnabled(true);
 		int newValue = corpusSlider.getMaximum() + 1;
 		
-		JLabel l = new JLabel( makeLabelString(label));
+		JLabel l = new JLabel( makeLabelString(label, newValue));
 		labels.put(newValue, l);
 		corpusSlider.setMaximum(newValue);
 		corpusSlider.setLabelTable(labels);
