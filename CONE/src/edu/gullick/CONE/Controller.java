@@ -29,6 +29,7 @@ import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import edu.gullick.CONE.Corpus.LIMIT_TYPE;
 import edu.gullick.physics2D.Particle;
 import edu.gullick.physics2D.Spring;
 
@@ -56,9 +57,9 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	private Vector<HistoryObject> history = new Vector<HistoryObject>();
 	private WordNode lastSelected = null;
 	private Corpus currentCorpus = null;
-	private Double TFilterValue = 0D;
+	private int oldFilterValue = 50;
 	
-	private Vector<Corpus> corpuses = new Vector<Corpus>();
+	private HashMap<Integer, Corpus> corpuses = new HashMap<Integer, Corpus>();
 	
 	public static void main(String[] args){
 		new Controller();
@@ -283,18 +284,21 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	
 	/*method called to open a given node*/
 	public void openNode(WordNode wn, boolean addToHistory){
+	System.out.println("Opening: " + wn.getWord());
 		try {
 			wn.makeFixed();
-			Vector<LinkInformation> neighbours = currentCorpus.getNeighbours(wn.getWord()); 
+			wn.setNodeOpen(true);
+			Vector<LinkInformation> neighbours = currentCorpus.getNeighbours(wn.getWord(), Corpus.LIMIT_TYPE.PERCENTAGE, theGUI.filterSlider.getValue()); 
 			for(int x = 0;  x < neighbours.size();x++){
 				LinkInformation tempInfo = neighbours.get(x);
 				String word = "";
-				if(tempInfo.getAffinity() < TFilterValue){
-			
+				boolean wasWord1 = false;
 				if(wn.getWord().equals(tempInfo.getWord1())){
 					word = tempInfo.getWord2().trim();
+					wasWord1 = false;
 				}else{
 					word = tempInfo.getWord1().trim();
+					wasWord1 = true;
 				}
 				if(!wn.getWord().equals(word)){
 					WordNode tempNode = null;
@@ -304,6 +308,11 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 					}else{
 						//node doesnt already exist (so have to create a new node first)
 						tempNode = new WordNode( wn.position().x() +25 + ((int)(100*Math.random())), wn.position().y() + ((int)(100*Math.random())), 1, Color.BLUE,  word, 0, 10);
+						if(wasWord1){
+							tempNode.setFrequency(tempInfo.frequency1);
+						}else{
+							tempNode.setFrequency(tempInfo.frequency2);
+						}
 						physics.addParticle(tempNode);
 						currentNodes.put(word.trim(), tempNode);
 					}
@@ -331,8 +340,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 					}
 					
 				}
-					wn.setNodeOpen(true);
-				}
+					
 			}
 		}catch (Exception e) {}
 		
@@ -341,8 +349,13 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		}
 	}
 	
-	public void closeNode(WordNode wn, boolean addToHistory){
 	
+	public void closeNode(WordNode wn, boolean addToHistory){
+		closeNode(wn,addToHistory,true);
+	}
+	
+	public void closeNode(WordNode wn, boolean addToHistory, boolean removeNodes){
+		System.out.println("Closing: " + wn.getWord());
 		Vector<WordLink> links = wn.getLinks();
 		
 		for(int x = 0; x < links.size();){
@@ -357,15 +370,31 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		
 			if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() == 1){
 				// other node is a closed node, and only connected to this one. Remove it
-			 	removeAllAttractionsToNode(tempNode);
+			 	
+				if(removeNodes){
+				removeAllAttractionsToNode(tempNode);
+				}
 				wn.getNeighbours().remove(tempNode);
 				physics.removeSpring(tempSpring);
-				physics.removeParticle(tempNode);
+				if(removeNodes){
+					physics.removeParticle(tempNode);
+				}
+				
 				wn.removeLink(tempSpring);
-				currentNodes.remove(tempNode.getWord());
+				if(removeNodes){
+						currentNodes.remove(tempNode.getWord());
+				}
 				didDelete = true;
 			}else if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() > 1){
 				//remove references to each other
+				wn.getNeighbours().remove(tempNode);
+				tempNode.getNeighbours().remove(wn);
+				//remove spring connecting them
+				physics.removeSpring(tempSpring);
+				tempNode.removeLink(tempSpring);
+				wn.removeLink(tempSpring);
+				didDelete = true;
+			}else if(tempNode.isNodeOpen() && !tempNode.isInCurrentCorpus()){
 				wn.getNeighbours().remove(tempNode);
 				tempNode.getNeighbours().remove(wn);
 				//remove spring connecting them
@@ -419,7 +448,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		Vector<LinkInformation> neighbours = null;
 		String wordInfo = "";
 		try {
-			neighbours =  currentCorpus.getNeighbours(wn.getWord(), wordIndex.totalMinAffinity, TFilterValue); 
+			neighbours =  currentCorpus.getNeighbours(wn.getWord(), Corpus.LIMIT_TYPE.PERCENTAGE, theGUI.filterSlider.getValue()); 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -428,7 +457,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 			wordInfo += "-------------------\n";
 			wordInfo += wn.getWord() + "( " + neighbours.size() + " links ) \n";
 			wordInfo += "-------------------\n";
-			wordInfo += "Top 10:\n";
+			wordInfo += "Top " + Math.min(10, neighbours.size()) + ":\n";
 			int limit = Math.min(10, neighbours.size());
 			for(int x = 0; x < limit; x++){
 				LinkInformation tempInfo = neighbours.get(x);
@@ -449,7 +478,15 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	public  WordNode addNodeToSystem(String word, int x , int y, boolean addToHistory){
 		if(!currentNodes.containsKey(word) && wordIndex.lookUpWord(word, currentCorpus)){
 			WordNode temp = new WordNode(x,y, 1, Color.BLUE,  word, 0, 10);
-		
+			
+			Vector<LinkInformation> wordInfo = currentCorpus.getNeighbours(word, Corpus.LIMIT_TYPE.NUMBER, 1);
+			
+			if(wordInfo.get(0).word1.equals(word)){
+				temp.setFrequency(wordInfo.get(0).frequency1);
+			}else{
+				temp.setFrequency(wordInfo.get(0).frequency2);
+			}
+			
 	
 	
 			for(int a = 0; a < physics.getParticles().size(); a++){
@@ -617,6 +654,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 		}
 	}
 	
+	/*Called if add is pressed*/
 	public void addPressed(boolean addToHistory){
 		//TODO: fix this below!
 		SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
@@ -659,12 +697,16 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	    }; 
 		worker.execute();
 	}
+	
+	/*Called if the adjust tfilter was pressed*/
 	public void adjustTFilterPressed(boolean addToHistory){
 		//TODO: fix this part below:
 		if(addToHistory){
 			history.add( 0,new HistoryObject(HistoryObject.ACTION.ADJUST_TFILTER, null));
 		}
 	}
+	
+	/*Called if the undo button is pressed*/
 	public void undoPressed(boolean addToHistory){
 		if(history.size() > 0){
 			HistoryObject lastDone =  history.get(0) ;
@@ -741,18 +783,24 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 			theGUI.menuBar.requestFocus();
 		}
 	}
+	
+	/*called if the help button is pressed*/
 	public void helpPressed(boolean addToHistory){
 		JOptionPane.showMessageDialog(theGUI.theFrame, theGUI.helpText);
 		if(addToHistory){
 			//TODO: fix this
 		}
 	}
+	
+	/*called when the about button is pressed*/
 	public void aboutPressed(boolean addToHistory){
 		JOptionPane.showMessageDialog(theGUI.theFrame, theGUI.aboutText, "About",JOptionPane.INFORMATION_MESSAGE  , theGUI.theLogo);
 		if(addToHistory){
 			//TODO: fix this
 		}
 	}
+	
+	/*Called if the sidepane import button is pressed*/
 	public void searchPressed(boolean addToHistory){
 		//TODO: FIX THIS PART BELOW
 		System.out.println(sidePane.getInputText().trim()   );
@@ -778,169 +826,226 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
     		
     	}
 	}
-	
-	public void importPressed(boolean addToHistory){
-		//TODO: fix this part below
-	    SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-		    	String fileName = "";
-		    	Boolean userCancelled = false;
-		    	Corpus temp = null;
-		    	File[] files = null;
-		    	//This method automatically gets executed in a background thread
 
-		        public Void doInBackground() {
-		    		String[] formats = new String[] { "cdata"};
-		    		String description = "cdata files (*.cdata )";
-		    		boolean allowFolders = false;
-		    		JFileChooser chooser = new JFileChooser();
-		    		chooser.setMultiSelectionEnabled(true);
-		       		chooser.setFileFilter (new ExtendedFileFilter(formats,description,allowFolders));			
-		    	    chooser.showOpenDialog(theGUI.theFrame);
-		    	   files = chooser.getSelectedFiles();
-		    	   
-		    	    for(int y = 0; y < files.length; y++){
-			    	    if (files[y] == null){
-			    	    	userCancelled = true;
-			    	    	return null;
-			    	    }
-			           	try {
-							fileName = files[y].getName();
-			        		temp = wordIndex.analyzeXMLDOC(files[y].getPath(), theGUI);
-			        		corpuses.add(temp);
-						} catch (Exception e) {
-								e.printStackTrace();
-						}
+	/*Method called if the import button is pressed*/
+	public void importPressed(boolean addToHistory){
+	    SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+    	Boolean userCancelled = false;
+    	Corpus temp = null;
+    	File[] files = null;
+    	//This method automatically gets executed in a background thread
+
+	        public Void doInBackground() {
+	    		String[] formats = new String[] { "cdata"};
+	    		String description = "cdata files (*.cdata )";
+	    		boolean allowFolders = false;
+	    		String fileName = "";
+	    		JFileChooser chooser = new JFileChooser();
+	    		chooser.setMultiSelectionEnabled(true);
+	       		chooser.setFileFilter (new ExtendedFileFilter(formats,description,allowFolders));			
+	    	    chooser.showOpenDialog(theGUI.theFrame);
+	    	    files = chooser.getSelectedFiles();
+	    	    for(int y = 0; y < files.length; y++){
+		    	    if (files[y] == null){
+		    	    	userCancelled = true;
+		    	    	return null;
 		    	    }
-					return null;
-		        }
-		        public void done() {	
-		        	if(!userCancelled){
-		        		theGUI.setProgressBarString("Completed indexing of " +  files.length + " files.");
-		        		currentCorpus = corpuses.get(0);
-		        	}
-		        } 
-		    }; 
+		           	try {
+						fileName = files[y].getName();
+		        		temp = wordIndex.analyzeXMLDOC(files[y].getPath(), theGUI);
+		        		Integer index = theGUI.addCorpusToSlider(files[y].getName());
+		        		corpuses.put(index, temp);
+		        		if(index == 1){
+		        			currentCorpus = corpuses.get(1);
+		        		}
+					} catch (Exception e) {
+							e.printStackTrace();
+					}
+	    	    }
+				return null;
+	        }
+	        public void done() {	
+	        	if(!userCancelled){
+	        		theGUI.setProgressBarString("Completed indexing of " +  files.length + " files.");		        	}
+	        } 
+	    }; 
 		worker.execute();
-		
-		TFilterValue = ((wordIndex.totalMaxTScore - wordIndex.totalMinTScore )/ 2) + wordIndex.totalMinTScore;
-		theGUI.tfilterSlider.setValue(50);
+		theGUI.filterSlider.setValue(50);
 	}
 	
-	
-	
-	
+	/*Called if one of the Sliders is moved*/
 	public void stateChanged(ChangeEvent e) {
-		if(e.getSource() == theGUI.tfilterSlider){
-			
+	/*	
+	 * TODO::: complete this section
+	 *
+	 */ 
+		
+	if(e.getSource() == theGUI.filterSlider){
+		theGUI.filterSlider.setEnabled(false);
 			if(lastSelected != null){
 				updateDetailsInScreen(lastSelected);
 			}
-			
-			theGUI.tfilterSlider.setEnabled(false);
-			int x = theGUI.tfilterSlider.getValue();
-			Double oldFilter = TFilterValue;
-			Double filter = (((wordIndex.totalMaxTScore - wordIndex.totalMinTScore) /  100 ) * x) + wordIndex.totalMinTScore;
-			System.out.println(filter);
-			
-			//TODO: filter does not work!
-			if(oldFilter > filter){
-			System.out.println("lowering the slider");
-				
-
-				Vector<Spring> links = physics.getSprings();
-			
-				for(int b = 0; b < links.size();){
-					WordLink temp = (WordLink) links.get(b);
-					boolean didDelete = false;
-					if(temp.getTscore() > filter){
-						WordNode nodeA = (WordNode) temp.getOneEnd();
-						WordNode nodeB = (WordNode) temp.getTheOtherEnd();
-						physics.removeSpring(temp);
-						nodeA.removeNeighbour(nodeB);
-						nodeB.removeNeighbour(nodeA);
-						nodeA.removeLink(temp);
-						nodeB.removeLink(temp);
-						
-						System.out.println(nodeA.getWord());
-
-						System.out.println(nodeB.getWord());
-						
-						//remove node here!!
-						if(nodeA.getNeighbours().size() == 0  &&  !nodeA.isNodeOpen()){
-							removeAllAttractionsToNode(nodeA);
-							currentNodes.remove(nodeA.getWord());
-							physics.removeParticle(nodeA);
-						}
-						
-						if(nodeB.getNeighbours().size() == 0 && !nodeB.isNodeOpen()){
-							removeAllAttractionsToNode(nodeB);
-							currentNodes.remove(nodeB.getWord());
-							physics.removeParticle(nodeB);
-						}
-
-						didDelete = true;
-					}
+			theGUI.filterSlider.setEnabled(false);
+			int x = theGUI.filterSlider.getValue();
+			if(oldFilterValue > x){
+				System.out.println("lowering the slider");
+				Vector<Particle> particles = physics.getParticles();
+				for(int a = 0 ; a < particles.size(); a++){
+					WordNode wn = (WordNode) particles.get(a);
+					if(wn.isNodeOpen()){
+						Vector<LinkInformation> inverseNeighbours =  currentCorpus.getInverseNeighbours(wn.getWord(), Corpus.LIMIT_TYPE.PERCENTAGE, x); 
 					
-					//only move up to next index if there was no deleted spring
-					if(!didDelete){
-						b++;
-					}
-				}
-				
-			
-			}else if (oldFilter < filter ){
-				System.out.println("increasing the slider");
-				//filter is being lowered, go through and add as necessary
-			
-			
-			Vector<Particle> particles = physics.getParticles();
-				for(int c = 0; c < particles.size(); c++){
-					WordNode tempNode = (WordNode) particles.get(c);
-					if(tempNode.isNodeOpen()){
-						// get all of the nodes to be added..
-						Vector<LinkInformation> newNeighbours = currentCorpus.getNeighbours(tempNode.getWord(), oldFilter,filter );
-						WordNode wn = null;
-			
-						for(int d = 0; d < newNeighbours.size(); d++){
-							LinkInformation tempInfo = newNeighbours.get(d);
-							String word = "";
-							
-							
-							if(tempNode.getWord().equals(tempInfo.getWord1())){
-								word = tempInfo.getWord2();
+						for(int d = 0; d < inverseNeighbours.size(); d++){
+							String theWord = "";
+							if(wn.getWord().equals(inverseNeighbours.get(d).getWord1())){
+								theWord = inverseNeighbours.get(d).getWord2().trim();
 							}else{
-								word = tempInfo.getWord1();
+								theWord = inverseNeighbours.get(d).getWord1().trim();
 							}
 							
+							WordNode tempNode = currentNodes.get(theWord);
+							if(wn.getNeighbours().contains(tempNode)){
+								//contains a thing which must be deleted!
+								//TODO: combine this int oa handy little function
+								WordLink tempSpring = wn.getSpringTo(tempNode);
+								if(!tempNode.isNodeOpen() && tempNode.getNeighbours().size() == 1){
+									removeAllAttractionsToNode(tempNode);
+									wn.getNeighbours().remove(tempNode);
+									physics.removeSpring(tempSpring);
+									physics.removeParticle(tempNode);
+									wn.removeLink(tempSpring);
+									currentNodes.remove(tempNode.getWord());
+								}else if( tempNode.getNeighbours().size() > 1){
+									System.out.println("Removing link between "  + tempNode.getWord() + " and " + wn.getWord() );
+									wn.getNeighbours().remove(tempNode);
+									tempNode.getNeighbours().remove(wn);
+									physics.removeSpring(tempSpring);
+									tempNode.removeLink(tempSpring);
+									wn.removeLink(tempSpring);
+								}
+	
+							}
 							
-							wn = addNodeToSystem(word, (int) (tempNode.position().x() +25 + ((int)(100*Math.random()))),(int)( tempNode.position().y() + ((int)(100*Math.random()))), false);
+						}
+	
+					}
+				
+				}	
+			}else if (oldFilterValue < x){
+				System.out.println("increasing the slider");
+				// get all of the new neighbours, and go through comparing..
+				Vector<Particle> particles = physics.getParticles();
+				for(int a = 0 ; a < particles.size(); a++){
+					WordNode wn= (WordNode) particles.get(a);
+					if(wn.isNodeOpen()){
+						Vector<LinkInformation> neighbours =  currentCorpus.getNeighbours(wn.getWord(), Corpus.LIMIT_TYPE.PERCENTAGE, x); 
+						for(int b = 0; b < neighbours.size(); b++){
 						
-							
-							if(!wn.getNeighbours().contains(tempNode)){
-								double offset = 0-wordIndex.totalMinAffinity;
-								double lineLength = 500 - (((tempInfo.getAffinity() + offset)/(wordIndex.totalMaxAffinity + offset))*400) ;
-								double lineWidth = 50 - (lineLength/10);
-								WordLink tempSpring = new WordLink(tempNode,wn,(int)lineLength,0.2F,0.4F,Color.BLUE, (int)lineWidth, 1,tempInfo.getTscore());
-								physics.addSpring(tempSpring);
-								tempNode.addNeighbour(wn);
-								wn.addNeighbour(tempNode);
-								tempNode.addLink(tempSpring);
-								wn.addLink(tempSpring);
+							String theWord = "";
+							boolean wasWord1 = false;
+							if(wn.getWord().equals(neighbours.get(b).getWord1())){
+								theWord = neighbours.get(b).getWord2().trim();
+								wasWord1 = true;
+							}else{
+								theWord = neighbours.get(b).getWord1().trim();
+								wasWord1 = false;
 							}
+
+							if(!wn.getNeighbours().contains(theWord)){
+								
+
+								
+								/*
+								 * TODO:: Make this into a seperate function, along with open node 
+								 */
+								
+								WordNode tempNode = null;
+								if(currentNodes.containsKey(theWord)){
+									// current node Exists
+									tempNode = currentNodes.get(theWord);	
+								}else{
+									//node doesnt already exist (so have to create a new node first)
+									tempNode = new WordNode( wn.position().x() +25 + ((int)(100*Math.random())), wn.position().y() + ((int)(100*Math.random())), 1, Color.BLUE,  theWord, 0, 10);
+									if(wasWord1){
+										tempNode.setFrequency(neighbours.get(b).frequency1);
+									}else{
+										tempNode.setFrequency(neighbours.get(b).frequency2);
+									}
+									physics.addParticle(tempNode);
+									currentNodes.put(theWord.trim(), tempNode);
+								}
+								if(physics.getSpring(tempNode, wn) == null){
+									double offset = 0-wordIndex.totalMinAffinity;
+									double lineLength = 500 - (((neighbours.get(b).getAffinity() + offset)/(wordIndex.totalMaxAffinity + offset))*400) ;
+									double lineWidth = 50 - (lineLength/10);
+									WordLink tempSpring = new WordLink(wn,tempNode,(int)lineLength,0.2F,0.4F,Color.BLUE, (int)lineWidth, 1,neighbours.get(b).getTscore());
+									physics.addSpring(tempSpring);
+									tempNode.addNeighbour(wn);
+									wn.addNeighbour(tempNode);
+									tempNode.addLink(tempSpring);
+									wn.addLink(tempSpring);
+									//add a repulsion between every other node and this one
+									for(int c = 0; c < physics.getParticles().size(); c++){
+										WordNode n = (WordNode) physics.getParticles().get(c);
+										if(n != tempNode ){
+											WordAttraction tempAttraction = new WordAttraction(tempNode,n, -50000, 15);
+											n.addAttraction(tempAttraction);
+											tempNode.addAttraction(tempAttraction);
+											physics.addAttraction( tempAttraction);
+										}	
+									}
+								}
+								
+							}
+							
 						}
 					}
-				}
 				
+				}	
+				
+				/*
+				 * get neighbours again, and add any that are missing
+				 * */
 			}		
-			theGUI.tfilterSlider.setEnabled(true);
-			TFilterValue = filter;
+			
+			theGUI.filterSlider.setEnabled(true);
+			oldFilterValue = theGUI.filterSlider.getValue();
+		}else
+		
+		 if(e.getSource() == theGUI.corpusSlider){
+			int  x = theGUI.corpusSlider.getValue();
+			if(currentCorpus != corpuses.get(x)){
+				currentCorpus = corpuses.get(x);
+				updateToNewCorpus();
+			}			
 		}
 		
 	}
-
-
-	/*Opens the browser at the given location in various locations*/
 	
+	/*Updates the shown map to the currentCorpus*/
+	public void updateToNewCorpus(){
+		Vector<Particle> particles = physics.getParticles();
+		for(int c = 0; c < particles.size(); c++){
+			WordNode tempNode = (WordNode) particles.get(c);
+			if(currentCorpus.doesWordExist(tempNode.getWord())){
+				tempNode.setInCurrentCorpus(true);
+			}else{
+				tempNode.setInCurrentCorpus(false);
+			}
+			if(tempNode.isNodeOpen()){
+				
+	
+				
+				closeNode(tempNode,false);
+				openNode(tempNode, false);
+				
+				
+				
+			}
+		}
+	}
+
+	/*Opens the browser at Google*/
 	public void openLinkInGoogle() {
 	        if (Desktop.isDesktopSupported()) {
 	                Desktop desktop = Desktop.getDesktop();
@@ -964,7 +1069,8 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	                // TODO: error handling
 	        }
 	    }
-	
+
+	/*Opens the browser at Wikipedia*/		
 	public void openLinkInWikipedia() {
         if (Desktop.isDesktopSupported()) {
                 Desktop desktop = Desktop.getDesktop();
@@ -991,7 +1097,8 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
                 // TODO: error handling
         }
     }
-
+	
+	/*Opens the browser at WMatrix*/
 	public void openLinkInWMatrix() {
         if (Desktop.isDesktopSupported()) {
                 Desktop desktop = Desktop.getDesktop();
@@ -1019,14 +1126,9 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
                 // TODO: error handling
         }
     }
-		
-		
-		
 	
-	
-	
-		
-		public void openLinkInDictionary() {
+	/*Opens the browser at Dictionary*/
+	public void openLinkInDictionary() {
         if (Desktop.isDesktopSupported()) {
                 Desktop desktop = Desktop.getDesktop();
                
@@ -1052,11 +1154,9 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
                 // TODO: error handling
         }
     }
-		
-    
-
-			
-			public void openLinkInThesaurus() {
+	
+	/*Opens the browser at Thesaurus*/
+	public void openLinkInThesaurus() {
 	        if (Desktop.isDesktopSupported()) {
 	                Desktop desktop = Desktop.getDesktop();
 	               
@@ -1084,9 +1184,7 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	        }
 	    }
 			
-    
-	/*#####Unimplemented methods from interfaces below this line!!!!####*/
-	
+    /*Unimplemented methods from interfaces below this line*/
 	public void keyPressed(KeyEvent e) {}
 	public void mouseEntered(MouseEvent e) {}
 	public void mouseExited(MouseEvent e) {}
@@ -1098,9 +1196,6 @@ public class Controller extends JApplet implements ActionListener, ItemListener,
 	public void windowDeactivated(WindowEvent e) {}
 	public void mouseClicked(MouseEvent e) {}
 	public void mouseMoved(MouseEvent e) {}
-
-
-
 }	
 		
 

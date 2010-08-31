@@ -3,12 +3,15 @@ import javax.swing.*;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.Vector;
 
 
@@ -64,26 +67,30 @@ public class GUI{
 	public JMenuItem	linkThesaurusButton = new JMenuItem("Thesaurus.com");
 	public JMenuItem 	linkDictionaryButton = new JMenuItem("Dictionary.com");
 	
-	public JMenuItem displayNodes = new  JRadioButtonMenuItem("Display Nodes");
-	public JMenuItem displayEdges = new  JRadioButtonMenuItem("Display Edges");
-	public JMenuItem displayWords = new  JRadioButtonMenuItem("Display Words");
-	public JMenuItem displayForces = new  JRadioButtonMenuItem("Display Forces");
-	public JMenuItem displayDebug = new  JRadioButtonMenuItem("Display Debug");
+	public JRadioButton displayNodes = new  JRadioButton("Display Nodes");
+	public JRadioButton displayEdges = new  JRadioButton("Display Edges");
+	public JRadioButton displayWords = new  JRadioButton("Display Words");
+	public JRadioButton displayForces = new  JRadioButton("Display Forces");
+	public JRadioButton displayDebug = new  JRadioButton("Display Debug");
 	public JMenuItem pauseButton = new  JRadioButtonMenuItem("Pause Physics");
-	public JMenuItem smoothFontButton = new  JRadioButtonMenuItem("Smooth Font");
-	public JMenuItem smoothAnimationButton = new  JRadioButtonMenuItem("Smooth Animation");
-	public JMenuItem showIndex = new  JRadioButtonMenuItem("Show Index");
+	public JRadioButton smoothFontButton = new  JRadioButton("Smooth Font");
+	public JRadioButton smoothAnimationButton = new  JRadioButton("Smooth Animation");
+	public JRadioButton showIndex = new  JRadioButton("Show Index");
 	public JMenuItem zoomInButton = new  JMenuItem("Zoom In");
 	public JMenuItem zoomOutButton = new  JMenuItem("Zoom Out");
 
+	public JTabbedPane  tabbedPane = new JTabbedPane();
+	
+
+	JPanel settingsPanel =  new JPanel(new GridLayout(0,2));
 	
 	
 	/*Strings used in the help menu choices*/
 	public String aboutText = "<html><b>CONE</b>: <b>CO</b>llocation <b>N</b>etwork <b>E</b>xplorer <i>v0.5</i>. <br/>Written by David Gullick at Lancaster University UK  (2010). <br/>Thanks to:<br/>Francois Taiani, <br/>Paul Rayson, <br/>John Mariani </html>";
 	public String helpText = "<html>CONE is a graphical approach to exploring large bodies of text using collocation...<html>";
 
-	public JSlider tfilterSlider = new JSlider(JSlider.HORIZONTAL,0,100,50);
-	public JSlider corpusSlider = new JSlider();
+	public JSlider filterSlider = new JSlider(JSlider.HORIZONTAL,0,100,50);
+	public JSlider corpusSlider = new JSlider(JSlider.HORIZONTAL,0,0,0);
 	
 	/*Progress bar seen at the bottom of the page.*/
 	public JProgressBar progBar = new JProgressBar();
@@ -130,39 +137,39 @@ public class GUI{
 	
 		displayNodes.setSelected(false);
 		displayNodes.addItemListener(theController);
-		toolsMenu.add(displayNodes);
-		displayNodes.setAccelerator(KeyStroke.getKeyStroke('n'));
+		settingsPanel.add(displayNodes);
+		//displayNodes.setAccelerator(KeyStroke.getKeyStroke('n'));
 
 	
 		displayEdges.setSelected(true);
 		displayEdges.addItemListener(theController);
-		toolsMenu.add(displayEdges);
-		displayEdges.setAccelerator(KeyStroke.getKeyStroke('e'));
+		settingsPanel.add(displayEdges);
+		//displayEdges.setAccelerator(KeyStroke.getKeyStroke('e'));
 		
 		displayForces.setSelected(false);
 		displayForces.addItemListener(theController);
-		toolsMenu.add(displayForces);
+		settingsPanel.add(displayForces);
 		//displayDebug.setAccelerator(KeyStroke.getKeyStroke(''));
 		
 		displayWords.setSelected(true);
 		displayWords.addItemListener(theController);
-		toolsMenu.add(displayWords);
-		displayWords.setAccelerator(KeyStroke.getKeyStroke('w'));
+		settingsPanel.add(displayWords);
+		//displayWords.setAccelerator(KeyStroke.getKeyStroke('w'));
 
 		displayDebug.setSelected(false);
 		displayDebug.addItemListener(theController);
-		toolsMenu.add(displayDebug);
-		displayDebug.setAccelerator(KeyStroke.getKeyStroke('d'));
+		settingsPanel.add(displayDebug);
+		//displayDebug.setAccelerator(KeyStroke.getKeyStroke('d'));
 		
 		smoothFontButton.setSelected(false);
 		smoothFontButton.addItemListener(theController);
-		toolsMenu.add(smoothFontButton);
-		smoothFontButton.setAccelerator(KeyStroke.getKeyStroke('f'));
+		settingsPanel.add(smoothFontButton);
+		//smoothFontButton.setAccelerator(KeyStroke.getKeyStroke('f'));
 		
 		smoothAnimationButton.setSelected(false);
 		smoothAnimationButton.addItemListener(theController);
-		toolsMenu.add(smoothAnimationButton);
-		smoothAnimationButton.setAccelerator(KeyStroke.getKeyStroke('a'));
+		settingsPanel.add(smoothAnimationButton);
+		//smoothAnimationButton.setAccelerator(KeyStroke.getKeyStroke('a'));
 		
 
 		pauseButton.setSelected(false);
@@ -172,7 +179,7 @@ public class GUI{
 
 		showIndex.setSelected(false);
 		showIndex.addItemListener(theController);
-		toolsMenu.add(showIndex);
+		settingsPanel.add(showIndex);
 		//showIndex.setAccelerator(KeyStroke.getKeyStroke('p'));
 
 		zoomInButton.addActionListener(theController);
@@ -245,35 +252,33 @@ public class GUI{
 		helpButton.addActionListener(theController);
 		deleteWordButton.addActionListener(theController);
 		
-		tfilterSlider.addChangeListener(theController);
-		tfilterSlider.setMajorTickSpacing(10);
-		tfilterSlider.setMinorTickSpacing(5);
-		tfilterSlider.setPaintTicks(true);
-		tfilterSlider.setPaintLabels(true);
-		//tfilterSlider.setSnapToTicks(true);
-		
-
-		
-		/*
+		filterSlider.addChangeListener(theController);
+		filterSlider.setMajorTickSpacing(10);
+		filterSlider.setMinorTickSpacing(5);
+		filterSlider.setPaintTicks(true);
+		filterSlider.setPaintLabels(true);
+	
 		corpusSlider.addChangeListener(theController);
-		corpusSlider.setMajorTickSpacing(10);
-		corpusSlider.setMinorTickSpacing(1);
+		corpusSlider.setMajorTickSpacing(1);
 		corpusSlider.setPaintTicks(true);
 		corpusSlider.setPaintLabels(true);
-		 */
-		
-		
+		corpusSlider.setEnabled(false);
+		corpusSlider.setSnapToTicks(true);
+	
 		/*Adding everything to the GUI*/
 		mainPanel.add(theScreen,  BorderLayout.CENTER);
 		theFrame.setJMenuBar(menuBar);
 		
+		
 		/*Final frame configurations*/
 		theFrame.setDefaultCloseOperation(3);
-		theFrame.setContentPane(mainPanel);
+		tabbedPane.addTab("Visualisation", null, mainPanel, "Visualisation");
+		tabbedPane.addTab("Settings", null, settingsPanel, "Settings");
+		theFrame.setContentPane(tabbedPane);
 		theFrame.setSize(width,height);
 	
 		/*Setting up the progress bar*/
-		lowerPanel.add(tfilterSlider);
+		lowerPanel.add(filterSlider);
 		lowerPanel.add(corpusSlider);
 		lowerPanel.add(progBar);
 		mainPanel.add(lowerPanel,  BorderLayout.SOUTH);
@@ -327,6 +332,55 @@ public void updateLabels(WordNode wn){
 		deleteWordButton.setEnabled(true);
 		linkMenu.setText("Look up '" + wn.getWord() + "' in..");
 	}
+}
+
+public String makeLabelString(String s){
+	String toReturn = "<html><font size='1'>";
+	
+	
+		toReturn += s;
+	
+	
+	toReturn +="</html>";
+	return toReturn;
+}
+
+public int addCorpusToSlider(String label){
+	
+	
+	/*If the slider currently has no entries*/
+	if(corpusSlider.getMaximum() == 0){
+		Dictionary<Integer, Component> labels = new Hashtable<Integer, Component>();
+		corpusSlider.setEnabled(true);
+		corpusSlider.setMinimum(1);
+		corpusSlider.setMaximum(1);
+		corpusSlider.setValue(1);
+		
+		JLabel l = new JLabel( makeLabelString(label));
+		labels.put(1, l);
+		
+		corpusSlider.setLabelTable(labels);
+		corpusSlider.setEnabled(false);
+		corpusSlider.validate();
+		corpusSlider.update(corpusSlider.getGraphics());
+		corpusSlider.updateUI();
+		return 1;
+	}else{
+		Dictionary<Integer, Component> labels = corpusSlider.getLabelTable();
+		corpusSlider.setEnabled(true);
+		int newValue = corpusSlider.getMaximum() + 1;
+		
+		JLabel l = new JLabel( makeLabelString(label));
+		labels.put(newValue, l);
+		corpusSlider.setMaximum(newValue);
+		corpusSlider.setLabelTable(labels);
+		corpusSlider.validate();
+		corpusSlider.update(corpusSlider.getGraphics());
+		corpusSlider.updateUI();
+		return newValue;
+	}
+	
+
 }
 	
 	

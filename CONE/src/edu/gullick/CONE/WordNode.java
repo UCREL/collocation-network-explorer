@@ -27,7 +27,9 @@ public class WordNode extends Particle{
 	private Color color = new Color(0);
 	private HashMap<Object, Object> attributes = new HashMap<Object, Object>();
 	private boolean isSelected = false;
-
+	private boolean isInCurrentCorpus = true;
+	
+	
 	public boolean isSelected() {
 		return isSelected;
 	}
@@ -194,6 +196,14 @@ public class WordNode extends Particle{
 
 	public Vector<LinkInformation> getTotalInfoFromWordIndex() {
 		return totalInfoFromWordIndex;
+	}
+
+	public void setInCurrentCorpus(boolean isInCurrentCorpus) {
+		this.isInCurrentCorpus = isInCurrentCorpus;
+	}
+
+	public boolean isInCurrentCorpus() {
+		return isInCurrentCorpus;
 	}
 
 
