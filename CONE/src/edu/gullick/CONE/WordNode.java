@@ -1,5 +1,4 @@
 package edu.gullick.CONE;
-import java.util.HashMap;
 import java.util.Vector;
 import edu.gullick.physics2D.Particle;
 
