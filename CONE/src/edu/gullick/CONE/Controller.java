@@ -92,7 +92,7 @@ public class Controller extends JApplet implements ActionListener,
 	private boolean addingNewNode = false;
 	
 	/** The new node word. */
-	private String newNodeWord = "undefined";
+	private String newNodeWord = "ftp://ftp.";
 	
 	/** The current nodes. */
 	private HashMap<String, WordNode> currentNodes = new HashMap<String, WordNode>();
@@ -599,16 +599,20 @@ public class Controller extends JApplet implements ActionListener,
 	public void updateDetailsInScreen(WordNode wn) {
 		Vector<LinkInformation> neighbours = null;
 		String wordInfo = "";
+		int totalNumber = -1;
 		try {
 			neighbours = currentCorpus.getNeighbours(wn.getWord(),
 					Corpus.LIMIT_TYPE.PERCENTAGE,
 					theGUI.filterSlider.getValue());
+			totalNumber = currentCorpus.getNeighbours(wn.getWord(),
+					Corpus.LIMIT_TYPE.PERCENTAGE,
+					100).size();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		if (neighbours != null) {
 			wordInfo += "-------------------\n";
-			wordInfo += wn.getWord() + "( " + neighbours.size() + " links ) \n";
+			wordInfo += wn.getWord() + "( " + neighbours.size() + "/" + totalNumber + " links ) \n";
 			wordInfo += "-------------------\n";
 			wordInfo += "Top " + Math.min(10, neighbours.size()) + ":\n";
 			int limit = Math.min(10, neighbours.size());
@@ -642,13 +646,47 @@ public class Controller extends JApplet implements ActionListener,
 	 */
 	public WordNode addNodeToSystem(String word, int x, int y,
 			boolean addToHistory) {
-		if (!currentNodes.containsKey(word)
-				&& wordIndex.lookUpWord(word, currentCorpus)) {
+		if (!currentNodes.containsKey(word)) {
 			WordNode temp = new WordNode(x, y, 1,  word, 0);
 
-			Vector<LinkInformation> wordInfo = currentCorpus.getNeighbours(
+			int position = -2;
+			
+			
+			// if word is not in current corpus, find out which one it is in
+			if(!currentCorpus.doesWordExist(word)){
+				position = wordIndex.lookUpWordGlobally(word, corpuses);
+				System.out.println("returned position : " + position);
+			}
+			
+			
+			Vector<LinkInformation> wordInfo = new Vector<LinkInformation>();
+			
+			
+			// get the word info for the word
+			if(position == -1){
+				// it does not exist in any corpus
+				System.out.println("DOESNT EXIST AT ALL");
+				return null;
+			}else if(position == -2){
+				// it exists in the currentCorpus
+				wordInfo = currentCorpus.getNeighbours(
+						word, Corpus.LIMIT_TYPE.NUMBER, 1);
+				System.out.println("Exists in the current corpus");
+			}else{
+				// else the position is the place in the list to look for the corpus that does contain it
+				wordInfo = corpuses.get(position).getNeighbours(
 					word, Corpus.LIMIT_TYPE.NUMBER, 1);
-
+				temp.setInCurrentCorpus(false);
+				System.out.println("Exists in a different corpus: " + corpuses.get(position).fileName);
+			}
+			
+			
+			if(wordInfo == null){
+				System.out.println("WordInfo is null!");
+			}else{
+				System.out.println(wordInfo.size());
+			}
+			
 			if (wordInfo.get(0).word1.equals(word)) {
 				temp.setFrequency(wordInfo.get(0).frequency1);
 			} else {
@@ -954,10 +992,17 @@ public class Controller extends JApplet implements ActionListener,
 			public Boolean doInBackground() {
 				tempString = JOptionPane.showInputDialog(
 						"Please type the word to add below:").trim();
-
-				if (wordIndex.lookUpWord(tempString, currentCorpus)) {
+				
+				
+				
+				try{
+				if (wordIndex.lookUpWordGlobally(tempString, corpuses) != -1) {
 					return true;
 				} else {
+					return false;
+				}
+				}catch(Exception e){
+					e.printStackTrace();
 					return false;
 				}
 			}
@@ -966,7 +1011,8 @@ public class Controller extends JApplet implements ActionListener,
 				Boolean temp = false;
 				try {
 					temp = get();
-				} catch (Exception ignore) {
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 				if (temp && tempString != null) {
 					if (!currentNodes.containsKey(tempString)) {
