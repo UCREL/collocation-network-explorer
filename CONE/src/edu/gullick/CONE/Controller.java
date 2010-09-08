@@ -17,6 +17,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.net.URI;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -27,6 +28,8 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.text.html.HTMLDocument.Iterator;
+
 import edu.gullick.physics2D.Particle;
 
 
@@ -111,6 +114,8 @@ public class Controller extends JApplet implements ActionListener,
 
 	/** The corpuses. */
 	private HashMap<Integer, Corpus> corpuses = new HashMap<Integer, Corpus>();
+	
+	private int lastSliderVal = 0;
 
 	
 	
@@ -655,7 +660,6 @@ public class Controller extends JApplet implements ActionListener,
 			// if word is not in current corpus, find out which one it is in
 			if(!currentCorpus.doesWordExist(word)){
 				position = wordIndex.lookUpWordGlobally(word, corpuses);
-				System.out.println("returned position : " + position);
 			}
 			
 			
@@ -665,27 +669,19 @@ public class Controller extends JApplet implements ActionListener,
 			// get the word info for the word
 			if(position == -1){
 				// it does not exist in any corpus
-				System.out.println("DOESNT EXIST AT ALL");
 				return null;
 			}else if(position == -2){
 				// it exists in the currentCorpus
 				wordInfo = currentCorpus.getNeighbours(
 						word, Corpus.LIMIT_TYPE.NUMBER, 1);
-				System.out.println("Exists in the current corpus");
-			}else{
+				}else{
 				// else the position is the place in the list to look for the corpus that does contain it
 				wordInfo = corpuses.get(position).getNeighbours(
 					word, Corpus.LIMIT_TYPE.NUMBER, 1);
 				temp.setInCurrentCorpus(false);
-				System.out.println("Exists in a different corpus: " + corpuses.get(position).fileName);
 			}
 			
-			
-			if(wordInfo == null){
-				System.out.println("WordInfo is null!");
-			}else{
-				System.out.println(wordInfo.size());
-			}
+	
 			
 			if (wordInfo.get(0).word1.equals(word)) {
 				temp.setFrequency(wordInfo.get(0).frequency1);
@@ -719,7 +715,7 @@ public class Controller extends JApplet implements ActionListener,
 		}
 	}
 
-
+	
 
 	/**
 	 * this function removes the node from the system given a word
@@ -1032,8 +1028,12 @@ public class Controller extends JApplet implements ActionListener,
 						updateDetailsInScreen(tempNode);
 					}
 				} else if (!temp && tempString != null) {
-					JOptionPane.showMessageDialog(null,
-							"That word does not appear in the corpus");
+					if(corpuses.size() == 0){
+						JOptionPane.showMessageDialog(null,"No data is currently loaded. Please import atleast one '.cdata' file to continue.");
+						importPressed(true);
+					}else{
+						JOptionPane.showMessageDialog(null,"That word does not collocate significantly with \nany other word in the loaded data");
+					}
 				} else {
 					// the user has cancelled the box..
 				}
@@ -1243,8 +1243,8 @@ public class Controller extends JApplet implements ActionListener,
 						Integer index = theGUI.addCorpusToSlider(files[y]
 								.getName());
 						corpuses.put(index, temp);
-						if (index == 1) {
-							currentCorpus = corpuses.get(1);
+						if (index == 0) {
+							currentCorpus = corpuses.get(0);
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -1431,36 +1431,100 @@ public class Controller extends JApplet implements ActionListener,
 
 		if (e.getSource() == theGUI.corpusSlider) {
 			int x = theGUI.corpusSlider.getValue();
+		
+			if(x == lastSliderVal){
+				return;
+			}else{
+				lastSliderVal = x;
+			}
+			
+			int max = theGUI.corpusSlider.getMaximum();
+			int min = theGUI.corpusSlider.getMinimum();
+			
+			
+			Corpus corpusA = null;
+			Corpus corpusB = null;
+			int percentageB = 0;
+			int percentageA = 0;
+		
+			int remainder = x%10;
+			
+			if(x == max){
+				corpusB = corpuses.get(new Integer(x));
+				corpusA = corpuses.get(new Integer(x -10));
+				percentageA = 0;
+				percentageB = 100;
+			}else{
+				corpusA = corpuses.get(new Integer(x    - remainder    ));
+				corpusB = corpuses.get(new Integer(x + (10-remainder)       ));
+				percentageB = 10*(remainder);
+				percentageA = 10*(10 - remainder);
+			}
+
+			
+	
+			
+			
+			Double strengthInA = 0D;
+			Double strengthInB = 0D;
+	
+			
+			
+			
+			Vector<Particle> particles = physics.getParticles();
+			for (int c = 0; c < particles.size(); c++) {
+				WordNode tempNode = (WordNode) particles.get(c);
+				strengthInA=corpusA.getWordFrequency(tempNode.getWord());
+				strengthInB=corpusB.getWordFrequency(tempNode.getWord());
+				strengthInA=((strengthInA*percentageA)/100);
+				strengthInB=((strengthInB*percentageB)/100);
+				
+				Double frequency = ((strengthInA  + strengthInB)/2);
+				tempNode.setFrequency(frequency);
+				
+				if(frequency == 0){
+					tempNode.setInCurrentCorpus(false);
+				}else{
+					tempNode.setInCurrentCorpus(true);
+				}
+				
+				
+				
+			}
+			
+			
+			
+			
+			/*
 			if (currentCorpus != corpuses.get(x)) {
 				currentCorpus = corpuses.get(x);
 				updateToNewCorpus();
 			}
+			*/
+			
+			// start of method for a smooth slider..
+
+			
+		//    Collection<WordNode> c = currentNodes.values();
+		    
+		    //obtain an Iterator for Collection
+		  //  java.util.Iterator<WordNode> itr = c.iterator();
+		 
+		    //iterate through HashMap values iterator
+		//    while(itr.hasNext()){
+		      
+		   // boolean existInCorpusA = false;
+		  //  boolean existInCorpusB = false;
+		    	
+		    	
+		 //  }
 		}
 
 	}
 
 	
 	
-	/**
-	 * Updates the shown map to the currentCorpus
-	 */
-	public void updateToNewCorpus() {
-		Vector<Particle> particles = physics.getParticles();
-		for (int c = 0; c < particles.size(); c++) {
-			WordNode tempNode = (WordNode) particles.get(c);
-			if (currentCorpus.doesWordExist(tempNode.getWord())) {
-				tempNode.setInCurrentCorpus(true);
-			} else {
-				tempNode.setInCurrentCorpus(false);
-			}
-			if (tempNode.isNodeOpen()) {
-
-				closeNode(tempNode, false);
-				openNode(tempNode, false);
-
-			}
-		}
-	}
+	
 
 	/**
 	 *  Opens the browser at Google .
