@@ -4,6 +4,7 @@
 package edu.gullick.CONE;
 
 import java.awt.Desktop;
+import java.awt.Frame;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,18 +19,26 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.net.URI;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
+
+import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.text.html.HTMLDocument.Iterator;
 
+import edu.gullick.CONE.Corpus.LIMIT_TYPE;
 import edu.gullick.physics2D.Particle;
 
 
@@ -43,10 +52,10 @@ public class Controller extends JApplet implements ActionListener,
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = 1L;
 	
-	/** The WIDTH. */
+	/** The initial WIDTH. */
 	private final int WIDTH = 800;
 	
-	/** The HEIGHT. */
+	/** The initiail HEIGHT. */
 	private final int HEIGHT = 600;
 	
 	/** The physics. */
@@ -95,10 +104,10 @@ public class Controller extends JApplet implements ActionListener,
 	private boolean addingNewNode = false;
 	
 	/** The new node word. */
-	private String newNodeWord = "ftp://ftp.";
+	private String newNodeWord = "";
 	
 	/** The current nodes. */
-	private HashMap<String, WordNode> currentNodes = new HashMap<String, WordNode>();
+	private LinkedHashMap<String, WordNode> currentNodes = new LinkedHashMap<String, WordNode>();
 	
 	/** The history. */
 	private Vector<HistoryObject> history = new Vector<HistoryObject>();
@@ -106,17 +115,22 @@ public class Controller extends JApplet implements ActionListener,
 	/** The last selected. */
 	private WordNode lastSelected = null;
 	
-	/** The current corpus. */
-	private Corpus currentCorpus = null;
-	
 	/** The old filter value. */
 	private int oldFilterValue = 50;
+	private int oldCorpusValue = 0;
 
 	/** The corpuses. */
-	private HashMap<Integer, Corpus> corpuses = new HashMap<Integer, Corpus>();
+	private LinkedHashMap<Integer, Corpus> corpuses = new LinkedHashMap<Integer, Corpus>();
 	
 	private int lastSliderVal = 0;
+	
+	boolean currentlyInUndoMethod = false;
+	// and therefore dont re-add things to history
 
+	private Corpus corpusA = null;
+	private Corpus corpusB = null;
+	private int percentageA = 0;
+	private int percentageB = 0;
 	
 	
 	/**
@@ -136,6 +150,8 @@ public class Controller extends JApplet implements ActionListener,
 	 * listeners etc. Also sets up a timer to update the physics 15 times per second.
 	 */
 	public Controller() {
+		 SplashWindow splash = new SplashWindow();
+		    splash.showSplash();
 		physics = new Physics();
 		Timer timer = new Timer();
 		timer.scheduleAtFixedRate(new TimerTask() {
@@ -165,27 +181,25 @@ public class Controller extends JApplet implements ActionListener,
 	 */
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == theGUI.importButton) {
-			importPressed(false);
+			importPressed();
 		} else if (e.getSource() == theGUI.resetButton) {
-			resetPressed(false);
+			resetPressed();
 		} else if (e.getSource() == theGUI.centerButton) {
 			centerPressed(true);
 		} else if (e.getSource() == theGUI.deleteWordButton) {
 			deletePressed(true);
 		} else if (e.getSource() == theGUI.addButton) {
 			addPressed(true);
-		} else if (e.getSource() == theGUI.tFilterButton) {
-			adjustTFilterPressed(true);
 		} else if (e.getSource() == theGUI.aboutButton) {
-			aboutPressed(false);
+			aboutPressed();
 		} else if (e.getSource() == theGUI.undoButton) {
-			undoPressed(false);
+			undoPressed();
 		} else if (e.getSource() == theGUI.helpButton) {
-			helpPressed(false);
+			helpPressed();
 		} else if (e.getSource() == theGUI.zoomInButton) {
-			zoomInPressed(true);
+			zoomInPressed();
 		} else if (e.getSource() == theGUI.zoomOutButton) {
-			zoomOutPressed(true);
+			zoomOutPressed();
 		} else if (e.getSource() == theGUI.linkGoogleButton) {
 			openLinkInGoogle();
 		} else if (e.getSource() == theGUI.linkWikipediaButton) {
@@ -196,9 +210,12 @@ public class Controller extends JApplet implements ActionListener,
 			openLinkInThesaurus();
 		} else if (e.getSource() == theGUI.linkDictionaryButton) {
 			openLinkInDictionary();
-		} else if (e.getSource() == sidePane.searchButton) {
-			searchPressed(false);
+		} else if (e.getSource() == theGUI.locateButton) {
+			locatePressed();
+		}else if (e.getSource() == sidePane.searchButton) {
+			searchPressed();
 		}
+		//The following ensures that the frame gets focus after a click - so that shortcuts still work!
 		theGUI.menuBar.requestFocus();
 	}
 
@@ -214,57 +231,57 @@ public class Controller extends JApplet implements ActionListener,
 		Object source = e.getItemSelectable();
 		if (source == theGUI.displayNodes) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				toggleDisplayNodes(false, true);
+				toggleDisplayNodes(false);
 			} else {
-				toggleDisplayNodes(true, true);
+				toggleDisplayNodes(true);
 			}
 		} else if (source == theGUI.displayEdges) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				toggleDisplayEdges(false, true);
+				toggleDisplayEdges(false);
 			} else {
-				toggleDisplayEdges(true, true);
+				toggleDisplayEdges(true);
 			}
 		} else if (source == theGUI.displayWords) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				toggleDisplayWords(false, true);
+				toggleDisplayWords(false);
 			} else {
-				toggleDisplayWords(true, true);
+				toggleDisplayWords(true);
 			}
 		} else if (source == theGUI.displayDebug) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				toggleDisplayDebug(false, true);
+				toggleDisplayDebug(false);
 			} else {
-				toggleDisplayDebug(true, true);
+				toggleDisplayDebug(true);
 			}
 		} else if (source == theGUI.displayForces) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				toggleDisplayForces(false, true);
+				toggleDisplayForces(false);
 			} else {
-				toggleDisplayForces(true, true);
+				toggleDisplayForces(true);
 			}
 		} else if (source == theGUI.smoothFontButton) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				toggleSmoothFont(false, true);
+				toggleSmoothFont(false);
 			} else {
-				toggleSmoothFont(true, true);
+				toggleSmoothFont(true);
 			}
 		} else if (source == theGUI.smoothAnimationButton) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				toggleSmoothAnimation(false, true);
+				toggleSmoothAnimation(false);
 			} else {
-				toggleSmoothAnimation(true, true);
+				toggleSmoothAnimation(true);
 			}
 		} else if (source == theGUI.pauseButton) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				togglePause(false, true);
+				togglePause(false);
 			} else {
-				togglePause(true, true);
+				togglePause(true);
 			}
 		} else if (source == theGUI.showIndex) {
 			if (e.getStateChange() == ItemEvent.DESELECTED) {
-				toggleShowIndex(false, true);
+				toggleShowIndex(false);
 			} else {
-				toggleShowIndex(true, true);
+				toggleShowIndex(true);
 			}
 		}
 		theGUI.menuBar.requestFocus();
@@ -276,6 +293,7 @@ public class Controller extends JApplet implements ActionListener,
 	 * @see java.awt.event.MouseListener#mouseReleased(java.awt.event.MouseEvent)
 	 */
 	public void mouseReleased(MouseEvent arg0) {
+		//if dragging a node
 		if (beingDragged != null) {
 			dragging = false;
 			if (!beingDragged.isNodeOpen()) {
@@ -369,6 +387,12 @@ public class Controller extends JApplet implements ActionListener,
 					dragStartY = ypos;
 					dragStartOffsetX = theScreen.getXoffset();
 					dragStartOffsetY = theScreen.getYoffset();
+					if(lastSelected != null){
+						lastSelected.setSelected(false);
+					}
+					lastSelected = null;
+					updateDetailsInScreen(null);
+					
 				}
 			}
 		} else if (mouseEvent.getClickCount() == 2) {
@@ -393,16 +417,130 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param wn the WordNode
 	 */
 	public void removeAllAttractionsToNode(WordNode wn) {
-		while (wn.getAttractions().size() > 0) {
-			WordAttraction temp = wn.getAttractions().get(0);
-			((WordNode) temp.getTheOtherEnd()).removeAttraction(temp);
-			((WordNode) temp.getOneEnd()).removeAttraction(temp);
-			physics.removeAttraction(temp);
+	
+		for(WordNode temp : currentNodes.values()){
+			WordAttraction x = temp.getAttractions().get(wn.getWord());
+			temp.removeAttraction(wn.getWord());
+			wn.removeAttraction(temp.getWord());
+			physics.removeAttraction(x);
 		}
+			
 
 	}
 
 
+	
+	public void updateNodeStatus(WordNode wn){
+		wn.setFrequency(wordIndex.lookupCombinedFrequency(wn.getWord(), corpusA, percentageA, corpusB, percentageB));
+	}
+	
+	public void updateNodeLinks(WordNode wn, LinkedHashMap<String ,LinkInformation> neighbours, boolean willDelete){
+		LinkedHashMap<String ,WordLink> currentLinks = wn.getLinks();
+		Vector<String> toRemove = new Vector<String>();
+		Vector<String> toAdd = new Vector<String>();
+		Vector<String> toChange = new Vector<String>();
+		
+		//first have to build a list to add, and remove.
+		
+		
+		// if it is not in the current corpus, remove all of the 'open' links it has to others.
+		if(wn.getFrequency() <= 0){
+		
+			for(Map.Entry<String ,WordLink> entry : currentLinks.entrySet()){
+				toRemove.add( entry.getKey());
+			}
+		
+		}else{
+			
+			//build up the list to add
+			for(Map.Entry<String ,LinkInformation> entry : neighbours.entrySet()){
+				String s = entry.getKey();
+				LinkInformation li = entry.getValue();
+				// if the new word would have a frequency of 0 or less, dont add it.
+			
+				// &&	wordIndex.lookupCombinedFrequency(s, corpusA, percentageA, corpusB, percentageB
+				
+				
+					if(!currentLinks.containsKey(s) && li.getAffinity() > 0 && wordIndex.lookupCombinedFrequency(s, corpusA, percentageA, corpusB, percentageB) > 0){
+						toAdd.add(s);
+					}else if (currentLinks.containsKey(s) && (currentLinks.get(s).getEndRepresentingWord(s).getFrequency() <= 0 | li.getAffinity() <= 0)){
+						//TODO: update this so it checks and is therefore more efficient
+						toRemove.add(s);
+					}else{
+						toChange.add(s);
+					}
+		
+			
+			}
+			
+			
+			//build up the list to remove
+			for(Map.Entry<String ,WordLink> entry : currentLinks.entrySet()){
+				String s = entry.getKey();
+				if(!neighbours.containsKey(s) ){
+					toRemove.add(s);
+				}
+			}
+			
+		}
+		
+		
+		
+		//First remove those that are not needed.
+		for(String s : toRemove){
+			WordNode otherNode = currentLinks.get(s).getEndRepresentingWord(s);
+			if(!willDelete){
+				if(otherNode.isNodeOpen() && otherNode.getFrequency() > 0){
+					//not removing links as the other node is open + has multiple links
+				}else if(otherNode.isNodeOpen() && otherNode.getFrequency() <= 0){
+					removeLink(currentLinks.get(s),false);
+				}else{
+					removeLink(currentLinks.get(s),true);
+				}
+			}else{
+				removeLink(currentLinks.get(s),false);
+			}
+		}
+		
+		//Add those that are needed
+		for(String s : toAdd){
+			LinkInformation tempInfo = neighbours.get(s);
+			
+			int xPosition =(int) ((wn.position().x()  - 50) + (Math.random()*100));
+			int yPosition =(int) ((wn.position().y()  - 50) + (Math.random()*100));
+			
+			WordNode added = addNodeToSystem(s, xPosition, yPosition, false);
+			//now must create a spring between the two
+			double offset = 0 - wordIndex.totalMinAffinity;
+			double lineLength = 500 - (((tempInfo.getAffinity() + offset) / (wordIndex.totalMaxAffinity + offset)) * 400);
+			double lineWidth = (50 - (lineLength / 10)) * 2;
+			WordLink tempSpring = new WordLink(wn, added, (int) lineLength, 0.2F, 0.4F, (int) lineWidth);
+			wn.addLink(tempSpring);
+			added.addLink(tempSpring);
+			wn.addNeighbour(added);
+			added.addNeighbour(wn);
+			physics.addSpring(tempSpring);
+		}
+		//change the values in the change list
+		for(String s : toChange){
+			LinkInformation tempInfo = neighbours.get(s);
+			//now must create a spring between the two
+			double offset = 0 - wordIndex.totalMinAffinity;
+			double lineLength = 500 - (((tempInfo.getAffinity() + offset) / (wordIndex.totalMaxAffinity + offset)) * 400);
+			double lineWidth = (50 - (lineLength / 10)) * 2;
+			WordLink theSpring = wn.getLinks().get(s);
+			if(theSpring != null){
+				theSpring.setRestLength((float) lineLength);
+				theSpring.setThickness((int) lineWidth);
+			}
+		}
+		
+		
+	}
+	
+	
+	
+	
 	/**
 	 * method called to open a given node
 	 *
@@ -410,90 +548,29 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param addToHistory the add to history
 	 */
 	public void openNode(WordNode wn, boolean addToHistory) {
-		System.out.println("Opening: " + wn.getWord());
 		try {
 			wn.makeFixed();
 			wn.setNodeOpen(true);
-			Vector<LinkInformation> neighbours = currentCorpus.getNeighbours(
-					wn.getWord(), Corpus.LIMIT_TYPE.PERCENTAGE,
-					theGUI.filterSlider.getValue());
-			for (int x = 0; x < neighbours.size(); x++) {
-				LinkInformation tempInfo = neighbours.get(x);
-				String word = "";
-				boolean wasWord1 = false;
-				if (wn.getWord().equals(tempInfo.getWord1())) {
-					word = tempInfo.getWord2().trim();
-					wasWord1 = false;
-				} else {
-					word = tempInfo.getWord1().trim();
-					wasWord1 = true;
-				}
-				if (!wn.getWord().equals(word)) {
-					WordNode tempNode = null;
-					if (currentNodes.containsKey(word)) {
-						// current node Exists
-						tempNode = currentNodes.get(word);
-					} else {
-						// node doesnt already exist (so have to create a new
-						// node first)
-						tempNode = new WordNode(wn.position().x() + 25
-								+ ((int) (100 * Math.random())), wn.position()
-								.y() + ((int) (100 * Math.random())), 1,
-								 word, 0);
-						if (wasWord1) {
-							tempNode.setFrequency(tempInfo.frequency1);
-						} else {
-							tempNode.setFrequency(tempInfo.frequency2);
-						}
-						physics.addParticle(tempNode);
-						currentNodes.put(word.trim(), tempNode);
-					}
-					if (physics.getSpring(tempNode, wn) == null) {
-						double offset = 0 - wordIndex.totalMinAffinity;
-						double lineLength = 500 - (((tempInfo.getAffinity() + offset) / (wordIndex.totalMaxAffinity + offset)) * 400);
-						double lineWidth = 50 - (lineLength / 10);
-						WordLink tempSpring = new WordLink(wn, tempNode,(int) lineLength, 0.2F, 0.4F,(int) lineWidth, 1);
-						physics.addSpring(tempSpring);
-						tempNode.addNeighbour(wn);
-						wn.addNeighbour(tempNode);
-						tempNode.addLink(tempSpring);
-						wn.addLink(tempSpring);
-						// add a repulsion between every other node and this one
-						for (int a = 0; a < physics.getParticles().size(); a++) {
-							WordNode n = (WordNode) physics.getParticles().get(
-									a);
-
-							if (n != tempNode) {
-								WordAttraction tempAttraction = new WordAttraction(
-										tempNode, n, -50000, 15);
-								n.addAttraction(tempAttraction);
-								tempNode.addAttraction(tempAttraction);
-								physics.addAttraction(tempAttraction);
-							}
-						}
-					}
-
-				}
-
+			Corpus tempCorpusA = corpusA;
+			Corpus tempCorpusB = corpusB;
+			if(corpusA == null){
+				tempCorpusA = new Corpus("");
 			}
-		} catch (Exception e) {
+			if(corpusB == null){
+				tempCorpusB = new Corpus("");
+			}
+			LinkedHashMap<String ,LinkInformation> neighbours = wordIndex.lookupCombinedWordNeighbours(wn.getWord(), tempCorpusA, percentageA, tempCorpusB, percentageB, Corpus.LIMIT_TYPE.NUMBER,  oldFilterValue);
+			updateNodeLinks(wn, neighbours, false);
+		
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-
 		if (addToHistory) {
 			history.add(0, new HistoryObject(HistoryObject.ACTION.EXPAND_NODE,
 					wn.getWord()));
 		}
 	}
 
-	/**
-	 * Close a node.
-	 *
-	 * @param wn the wn
-	 * @param addToHistory the add to history
-	 */
-	public void closeNode(WordNode wn, boolean addToHistory) {
-		closeNode(wn, addToHistory, true);
-	}
 
 	/**
 	 * Close node with extra parameters.
@@ -502,69 +579,18 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param addToHistory the add to history
 	 * @param removeNodes the remove nodes
 	 */
-	public void closeNode(WordNode wn, boolean addToHistory, boolean removeNodes) {
-		System.out.println("Closing: " + wn.getWord());
-		Vector<WordLink> links = wn.getLinks();
-
-		for (int x = 0; x < links.size();) {
-			boolean didDelete = false;
-			WordLink tempSpring = links.get(x);
-			WordNode tempNode = null;
-			if (tempSpring.getOneEnd() == wn) {
-				tempNode = (WordNode) tempSpring.getTheOtherEnd();
-			} else {
-				tempNode = (WordNode) tempSpring.getOneEnd();
-			}
-
-			if (!tempNode.isNodeOpen() && tempNode.getNeighbours().size() == 1) {
-				// other node is a closed node, and only connected to this one.
-				// Remove it
-
-				if (removeNodes) {
-					removeAllAttractionsToNode(tempNode);
-				}
-				wn.getNeighbours().remove(tempNode);
-				physics.removeSpring(tempSpring);
-				if (removeNodes) {
-					physics.removeParticle(tempNode);
-				}
-
-				wn.removeLink(tempSpring);
-				if (removeNodes) {
-					currentNodes.remove(tempNode.getWord());
-				}
-				didDelete = true;
-			} else if (!tempNode.isNodeOpen()
-					&& tempNode.getNeighbours().size() > 1) {
-				// remove references to each other
-				wn.getNeighbours().remove(tempNode);
-				tempNode.getNeighbours().remove(wn);
-				// remove spring connecting them
-				physics.removeSpring(tempSpring);
-				tempNode.removeLink(tempSpring);
-				wn.removeLink(tempSpring);
-				didDelete = true;
-			} else if (tempNode.isNodeOpen() && !tempNode.isInCurrentCorpus()) {
-				wn.getNeighbours().remove(tempNode);
-				tempNode.getNeighbours().remove(wn);
-				// remove spring connecting them
-				physics.removeSpring(tempSpring);
-				tempNode.removeLink(tempSpring);
-				wn.removeLink(tempSpring);
-				didDelete = true;
-			}
-
-			if (!didDelete) {
-				x++;
-			}
+	public void closeNode(WordNode wn, boolean addToHistory) {
+		try {
+			LinkedHashMap<String ,LinkInformation> neighbours = new LinkedHashMap<String, LinkInformation>();
+			updateNodeLinks(wn, neighbours, false);
+			wn.setNodeOpen(false);
+			wn.makeFree();
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		wn.setNodeOpen(false);
-		wn.makeFree();
-
 		if (addToHistory) {
-
 			history.add(0, new HistoryObject(HistoryObject.ACTION.CLOSE_NODE,
-					wn.getWord()));
+			wn.getWord()));
 		}
 	}
 
@@ -578,22 +604,6 @@ public class Controller extends JApplet implements ActionListener,
 	}
 
 
-	/**
-	 * Removes the all springs to node.
-	 *
-	 * @param wn the WordNode
-	 */
-	public void removeAllSpringsToNode(WordNode wn) {
-		while (wn.getLinks().size() > 0) {
-			WordLink tempLink = wn.getLinks().get(0);
-
-			((WordNode) tempLink.getTheOtherEnd()).getLinks().remove(tempLink);
-
-			((WordNode) tempLink.getOneEnd()).getLinks().remove(tempLink);
-
-			physics.removeSpring(tempLink);
-		}
-	}
 
 	
 	/**
@@ -602,16 +612,18 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param wn the WordNode
 	 */
 	public void updateDetailsInScreen(WordNode wn) {
-		Vector<LinkInformation> neighbours = null;
 		String wordInfo = "";
+		
+		if(wn == null){
+			theScreen.setWordInfo(wordInfo);
+			return;
+		}
+		
 		int totalNumber = -1;
+		LinkedHashMap<String, LinkInformation> neighbours = null;
 		try {
-			neighbours = currentCorpus.getNeighbours(wn.getWord(),
-					Corpus.LIMIT_TYPE.PERCENTAGE,
-					theGUI.filterSlider.getValue());
-			totalNumber = currentCorpus.getNeighbours(wn.getWord(),
-					Corpus.LIMIT_TYPE.PERCENTAGE,
-					100).size();
+			neighbours = wordIndex.lookupCombinedWordNeighbours(wn.getWord(), corpusA, percentageA, corpusB, percentageB, Corpus.LIMIT_TYPE.NUMBER,  oldFilterValue);
+			totalNumber = wordIndex.lookupCombinedWordNeighbours(wn.getWord(), corpusA, percentageA, corpusB, percentageB, Corpus.LIMIT_TYPE.NUMBER,  100).size();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -621,14 +633,14 @@ public class Controller extends JApplet implements ActionListener,
 			wordInfo += "-------------------\n";
 			wordInfo += "Top " + Math.min(10, neighbours.size()) + ":\n";
 			int limit = Math.min(10, neighbours.size());
-			for (int x = 0; x < limit; x++) {
-				LinkInformation tempInfo = neighbours.get(x);
-				if (tempInfo.word1.equals(wn.getWord().trim())) {
-					wordInfo += tempInfo.word2 + "\t" + tempInfo.affinity
-							+ "\n";
-				} else {
-					wordInfo += tempInfo.word1 + "\t" + tempInfo.affinity
-							+ "\n";
+			int count = 0;
+			for(Map.Entry<String,LinkInformation> entry : neighbours.entrySet()){
+				if(count <= limit){
+				LinkInformation tempInfo = entry.getValue();
+				wordInfo += tempInfo.getTheOtherWord(wn.getWord()) + "\t" + tempInfo.affinity	+ "\n";
+				count++;
+				}else{
+					break;
 				}
 			}
 		} else {
@@ -649,51 +661,27 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param addToHistory the add to history
 	 * @return the word node
 	 */
-	public WordNode addNodeToSystem(String word, int x, int y,
-			boolean addToHistory) {
+	public WordNode addNodeToSystem(String word, int x, int y, boolean addToHistory) {
 		if (!currentNodes.containsKey(word)) {
 			WordNode temp = new WordNode(x, y, 1,  word, 0);
-
-			int position = -2;
+			int position = wordIndex.lookUpWordGlobally(word, corpuses);
+			Double freq = wordIndex.lookupCombinedFrequency(word, corpusA, percentageA, corpusB, percentageB);
 			
 			
-			// if word is not in current corpus, find out which one it is in
-			if(!currentCorpus.doesWordExist(word)){
-				position = wordIndex.lookUpWordGlobally(word, corpuses);
-			}
-			
-			
-			Vector<LinkInformation> wordInfo = new Vector<LinkInformation>();
-			
-			
-			// get the word info for the word
+			//if lookup returned -1, it does not exist in any loaded corpus
 			if(position == -1){
-				// it does not exist in any corpus
 				return null;
-			}else if(position == -2){
-				// it exists in the currentCorpus
-				wordInfo = currentCorpus.getNeighbours(
-						word, Corpus.LIMIT_TYPE.NUMBER, 1);
-				}else{
-				// else the position is the place in the list to look for the corpus that does contain it
-				wordInfo = corpuses.get(position).getNeighbours(
-					word, Corpus.LIMIT_TYPE.NUMBER, 1);
-				temp.setInCurrentCorpus(false);
 			}
 			
 	
-			
-			if (wordInfo.get(0).word1.equals(word)) {
-				temp.setFrequency(wordInfo.get(0).frequency1);
-			} else {
-				temp.setFrequency(wordInfo.get(0).frequency2);
-			}
+			//if the frequency is zero, it needs to have a line drawn through it, so set the variable.
+			temp.setFrequency(freq);
+	
 
-			for (int a = 0; a < physics.getParticles().size(); a++) {
-				WordNode n = (WordNode) physics.getParticles().get(a);
+			//adding attractions between this node and every other node.
+			for (WordNode n : currentNodes.values()) {
 				if (n != temp) {
-					WordAttraction tempAttraction = new WordAttraction(temp, n,
-							-50000, 15);
+					WordAttraction tempAttraction = new WordAttraction(temp, n,	-50000, 15);
 					n.addAttraction(tempAttraction);
 					temp.addAttraction(tempAttraction);
 					physics.addAttraction(tempAttraction);
@@ -701,20 +689,21 @@ public class Controller extends JApplet implements ActionListener,
 			}
 
 			physics.addParticle(temp);
+			addToCurrentNodes(word.trim(), temp);
 			if (addToHistory) {
 				history.add(0, new HistoryObject(HistoryObject.ACTION.ADD_WORD,
 						temp.getWord()));
 			}
-			currentNodes.put(word.trim(), temp);
-			
 			return temp;
-		} else if (currentNodes.containsKey(word)) {
+		}else{
 			return currentNodes.get(word);
-		} else {
-			return null;
 		}
 	}
 
+	
+	private synchronized void addToCurrentNodes(String word, WordNode x){
+		currentNodes.put(word, x);
+	}
 	
 
 	/**
@@ -727,17 +716,16 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param addToHistory the add to history
 	 * @return true, if successful
 	 */
-	public boolean removeNodeFromSystem(String word, boolean close,
-			boolean removeSprings, boolean removeAttractions,
-			boolean addToHistory) {
+	public boolean removeNodeFromSystem(String word, boolean close,	boolean removeSprings, boolean removeAttractions, boolean addToHistory) {
 		WordNode wn = null;
 		if (currentNodes.containsKey(word)) {
 			wn = currentNodes.get(word);
 		} else {
 			return false;
 		}
+		
 		// close the node if necessary
-		if (close) {
+		if (close && wn.isNodeOpen()) {
 			closeNode(wn, false);
 		}
 		// remove attractions if necesary
@@ -746,7 +734,7 @@ public class Controller extends JApplet implements ActionListener,
 		}
 		// remove springs if necessary
 		if (removeSprings) {
-			removeAllSpringsToNode(wn);
+			updateNodeLinks(wn, new LinkedHashMap<String ,LinkInformation>(), true);
 		}
 		// Now remove node totally from physics and currentNodes list.
 		currentNodes.remove(word);
@@ -768,13 +756,10 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void toggleDisplayDebug(boolean selection, boolean addToHistory) {
+	public void toggleDisplayDebug(boolean selection) {
 		theScreen.setDisplayDebug(selection);
 		theGUI.displayDebug.setSelected(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.TOGGLE_DISPLAY_DEBUG, selection));
-		}
+
 	}
 
 	/**
@@ -783,13 +768,10 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void toggleDisplayWords(boolean selection, boolean addToHistory) {
+	public void toggleDisplayWords(boolean selection) {
 		theScreen.setDisplayText(selection);
 		theGUI.displayWords.setSelected(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.TOGGLE_DISPLAY_WORDS, selection));
-		}
+
 	}
 
 	/**
@@ -798,13 +780,9 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void toggleDisplayEdges(boolean selection, boolean addToHistory) {
+	public void toggleDisplayEdges(boolean selection) {
 		theScreen.setDisplayEdges(selection);
 		theGUI.displayEdges.setSelected(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.TOGGLE_DISPLAY_EDGES, selection));
-		}
 	}
 
 	/**
@@ -813,13 +791,9 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void toggleDisplayForces(boolean selection, boolean addToHistory) {
+	public void toggleDisplayForces(boolean selection) {
 		theScreen.setDisplayForces(selection);
 		theGUI.displayForces.setSelected(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.TOGGLE_DISPLAY_FORCES, selection));
-		}
 	}
 
 	/**
@@ -828,13 +802,9 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void toggleDisplayNodes(boolean selection, boolean addToHistory) {
+	public void toggleDisplayNodes(boolean selection) {
 		theScreen.setDisplayNodes(selection);
 		theGUI.displayNodes.setSelected(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.TOGGLE_DISPLAY_NODES, selection));
-		}
 	}
 
 	/**
@@ -843,13 +813,9 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void toggleSmoothFont(boolean selection, boolean addToHistory) {
+	public void toggleSmoothFont(boolean selection) {
 		theScreen.setSmoothFont(selection);
 		theGUI.smoothFontButton.setSelected(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.TOGGLE_SMOOTH_FONT, selection));
-		}
 	}
 
 	/**
@@ -858,13 +824,10 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void toggleSmoothAnimation(boolean selection, boolean addToHistory) {
+	public void toggleSmoothAnimation(boolean selection) {
 		theScreen.setSmoothAnimation(selection);
 		theGUI.smoothAnimationButton.setSelected(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.TOGGLE_SMOOTH_ANIMATION, selection));
-		}
+
 	}
 
 	/**
@@ -873,13 +836,10 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void togglePause(boolean selection, boolean addToHistory) {
+	public void togglePause(boolean selection) {
 		physics.setPaused(selection);
 		theGUI.pauseButton.setSelected(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.PAUSE_PHYSICS, true));
-		}
+
 	}
 
 	/**
@@ -887,12 +847,8 @@ public class Controller extends JApplet implements ActionListener,
 	 *
 	 * @param addToHistory the add to history
 	 */
-	public void zoomInPressed(boolean addToHistory) {
+	public void zoomInPressed() {
 		theScreen.zoomIn();
-		if (addToHistory) {
-			history.add(0,
-					new HistoryObject(HistoryObject.ACTION.ZOOM_IN, null));
-		}
 	}
 
 	/**
@@ -900,12 +856,8 @@ public class Controller extends JApplet implements ActionListener,
 	 *
 	 * @param addToHistory the add to history
 	 */
-	public void zoomOutPressed(boolean addToHistory) {
+	public void zoomOutPressed() {
 		theScreen.zoomOut();
-		if (addToHistory) {
-			history.add(0, new HistoryObject(HistoryObject.ACTION.ZOOM_OUT,
-					null));
-		}
 	}
 
 	/**
@@ -914,13 +866,8 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param selection the selection
 	 * @param addToHistory the add to history
 	 */
-	public void toggleShowIndex(boolean selection, boolean addToHistory) {
+	public void toggleShowIndex(boolean selection) {
 		sidePane.theFrame.setVisible(selection);
-		if (addToHistory) {
-			history.add(0, new HistoryObject(HistoryObject.ACTION.SHOW_INDEX,
-					selection));
-		}
-
 	}
 
 	/**
@@ -928,15 +875,35 @@ public class Controller extends JApplet implements ActionListener,
 	 *
 	 * @param addToHistory the add to history
 	 */
-	public void resetPressed(boolean addToHistory) {
+	public void resetPressed() {
 		physics.clear();
 		theScreen.setXOffset(0);
 		theScreen.setYOffset(0);
 		theScreen.resetZoom();
 		currentNodes.clear();
-		if (addToHistory) {
-			// TODO: addHistory
-		}
+		corpuses.clear();
+		corpusA = null;
+		corpusB = null;
+		percentageA = 0;
+		percentageB = 0;
+		beingDragged = null;
+		dragging = false;
+		particleDragStartX = 0;
+		particleDragStartY = 0;
+		locked = false;
+		dragStartX = 0;
+		dragStartY = 0;
+		dragStartOffsetX = 0;
+		dragStartOffsetY = 0;
+		addingNewNode = false;
+		newNodeWord = "";
+		lastSelected = null;
+		oldFilterValue = 50;
+		lastSliderVal = 0;
+		theGUI.reset();
+		history.clear();
+		updateDetailsInScreen(null);
+
 	}
 
 	/**
@@ -945,13 +912,13 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param addToHistory the add to history
 	 */
 	public void centerPressed(boolean addToHistory) {
+		ScreenSet ss = new ScreenSet(theScreen.getXoffset(), theScreen.getYoffset(), theScreen.getZoomLevel());
 		theScreen.setXOffset(0);
 		theScreen.setYOffset(0);
 		theScreen.resetZoom();
 		if (addToHistory) {
-			// history.add( 0,new
-			// HistoryObject(HistoryObject.ACTION.CENTER_PHYSICS, null));
-			// TODO: fix the null in the statement above.
+			 history.add( 0,new
+			 HistoryObject(HistoryObject.ACTION.CENTER_PHYSICS, ss ));
 		}
 	}
 
@@ -981,61 +948,91 @@ public class Controller extends JApplet implements ActionListener,
 	 * @param addToHistory the add to history
 	 */
 	public void addPressed(boolean addToHistory) {
-		// TODO: fix this below!
-		SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
-			private String tempString = null;
-
-			public Boolean doInBackground() {
-				tempString = JOptionPane.showInputDialog(
-						"Please type the word to add below:").trim();
+		SwingWorker<Vector<String>, Void> worker = new SwingWorker<Vector<String>, Void>() {
+			String failedWords = "";
+			
+			public Vector<String> doInBackground() {
+				String tempString = JOptionPane.showInputDialog(
+						"Please type the words to add below, seperated by commas:").trim();
 				
+				StringTokenizer st = new StringTokenizer(tempString, ",");
+				Vector<String> workedWords = new Vector<String>();
 				
 				
 				try{
-				if (wordIndex.lookUpWordGlobally(tempString, corpuses) != -1) {
-					return true;
-				} else {
-					return false;
-				}
+					while (st.hasMoreTokens()) {
+						String s = st.nextToken().trim();
+						if (wordIndex.lookUpWordGlobally(s, corpuses) != -1) {
+								workedWords.add(s);
+						 } else {
+								failedWords += s + ", ";
+					     }
+					}	
+					return workedWords;
 				}catch(Exception e){
 					e.printStackTrace();
-					return false;
+					return workedWords;
 				}
 			}
 
 			public void done() {
-				Boolean temp = false;
+				Vector<String> temp = null;
 				try {
 					temp = get();
-				} catch (Exception e) {
+				} catch (NullPointerException ne) {
+					// do nothing, Null pointer means the user cancelled.
+				}catch (Exception e) {
 					e.printStackTrace();
 				}
-				if (temp && tempString != null) {
-					if (!currentNodes.containsKey(tempString)) {
-						theScreen.setFollowPointer(true, tempString);
-						addingNewNode = true;
-						newNodeWord = tempString;
-					} else {
-						JOptionPane
-								.showMessageDialog(null,
-										"That word already appears in the visualisation.");
-						WordNode tempNode = currentNodes.get(tempString);
-						theScreen.center(tempNode);
-						if (lastSelected != null) {
-							lastSelected.setSelected(false);
+				
+				
+				
+				if(temp == null | temp.size() == 0){
+					//the user pressed cancel
+				}else if(corpuses.size() == 0 ){
+					JOptionPane.showMessageDialog(null,"No data is currently loaded. Please import atleast one '.cdata' file to continue.");
+					importPressed();
+				}else{
+					for(int a = 0; a < temp.size(); a++){
+						String s = temp.get(a).trim();
+						if (currentNodes.containsKey(s)) {
+							failedWords += s + ",\n";
+							temp.remove(a);
+							a--;
 						}
-						tempNode.setSelected(true);
-						updateDetailsInScreen(tempNode);
 					}
-				} else if (!temp && tempString != null) {
-					if(corpuses.size() == 0){
-						JOptionPane.showMessageDialog(null,"No data is currently loaded. Please import atleast one '.cdata' file to continue.");
-						importPressed(true);
+					
+					if(temp.size() == 1){
+						theScreen.setFollowPointer(true, temp.get(0));
+						addingNewNode = true;
+						newNodeWord = temp.get(0);
 					}else{
-						JOptionPane.showMessageDialog(null,"That word does not collocate significantly with \nany other word in the loaded data");
+						Double sqrt = Math.sqrt(temp.size());
+						int size = (int) (sqrt + (1 - sqrt%1));		//size is the size of a square layout
+						int centerX = theScreen.getCenterX();
+						int centerY = theScreen.getCenterY();
+						int width = theScreen.getPhysicsWidth();
+						int height = theScreen.getPhysicsHeight();
+						int widthSeperator = (width)/(size + 1);
+						int heighSeperator = (height)/(size + 1);
+						int leftEdge = centerX - (width/2) +  (widthSeperator/2);
+						int topEdge = centerY - (height/2) + (heighSeperator/2);
+						
+
+						for(int z = 0 ; z < temp.size(); z++){
+							int xPosition = leftEdge + ((z%size)*widthSeperator);
+							int yPosition = topEdge + ((z/size)*heighSeperator);
+							addNodeToSystem(temp.get(z), xPosition  ,yPosition  , true);
+						}
+						
+						
 					}
-				} else {
-					// the user has cancelled the box..
+					
+					
+					if(!failedWords.equals("")){
+						failedWords = failedWords.substring(0,failedWords.lastIndexOf(','));
+						JOptionPane.showMessageDialog(null,"The following words were not added:\n" + failedWords + ".\nEither they already are in the vizualisation, or they dont collocate significantly.");
+					}
 				}
 			}
 		};
@@ -1043,19 +1040,6 @@ public class Controller extends JApplet implements ActionListener,
 	}
 
 
-	/**
-	 * Called if the adjust tfilter was pressed
-	 * TODO: remove as no longer need this button!
-	 *
-	 * @param addToHistory the add to history
-	 */
-	public void adjustTFilterPressed(boolean addToHistory) {
-		// TODO: REMOVE THIS AS IT IS NO ONGER NEEDED
-		if (addToHistory) {
-			history.add(0, new HistoryObject(
-					HistoryObject.ACTION.ADJUST_TFILTER, null));
-		}
-	}
 
 
 	/**
@@ -1063,7 +1047,8 @@ public class Controller extends JApplet implements ActionListener,
 	 *
 	 * @param addToHistory the add to history
 	 */
-	public void undoPressed(boolean addToHistory) {
+	public void undoPressed() {
+		currentlyInUndoMethod = true;
 		if (history.size() > 0) {
 			HistoryObject lastDone = history.get(0);
 			System.out.println("Undoing an action " + lastDone.action);
@@ -1072,21 +1057,21 @@ public class Controller extends JApplet implements ActionListener,
 						.get((String) lastDone.details).getWord();
 				if (currentNodes.containsKey(wordToClose)) {
 					closeNode((WordNode) currentNodes.get(wordToClose), false);
-				} else {
-					System.out.println("Error closing node!");
 				}
 			} else if (lastDone.action == HistoryObject.ACTION.CLOSE_NODE) {
 				String wordToOpen = currentNodes.get((String) lastDone.details)
 						.getWord();
 				if (currentNodes.containsKey(wordToOpen)) {
 					openNode((WordNode) currentNodes.get(wordToOpen), false);
-				} else {
-					System.out.println("Error opening node!");
 				}
 			} else if (lastDone.action == HistoryObject.ACTION.CENTER_PHYSICS) {
-				// TODO: fix this
+				ScreenSet ss = (ScreenSet) lastDone.details;
+				theScreen.setXoffset(ss.getXOffset());
+				theScreen.setYoffset(ss.getYOffset());
+				theScreen.setZoomLevel(ss.getZoomLevel());
 			} else if (lastDone.action == HistoryObject.ACTION.ADD_WORD) {
 				String added = (String) lastDone.details;
+				//if the last thing to be one was add a word, rmeove it again
 				if (currentNodes.containsKey(added)) {
 					WordNode temp = currentNodes.get(added);
 					physics.removeParticle(temp);
@@ -1106,43 +1091,26 @@ public class Controller extends JApplet implements ActionListener,
 			} else if (lastDone.action == HistoryObject.ACTION.DELETE_NODE) {
 				// TODO: fix this!
 				DeleteHistory details = (DeleteHistory) lastDone.details;
-				WordNode temp = new WordNode(details.getX(), details.getY(), 1,
-						 details.getWord(), 0);
-				System.out.println(temp.getWord());
-				physics.addParticle(temp);
-				currentNodes.put(temp.getWord().trim(), temp);
-				// create Node details.getWord() at details.getX()
-				// details.getY();
+				WordNode temp = addNodeToSystem(details.getWord(),details.getX(), details.getY(), false);
+				//if the node was close to delete it, re-open it
 				if (details.isClosed()) {
 					openNode(temp, false);
 				}
-			} else if (lastDone.action == HistoryObject.ACTION.ADJUST_TFILTER) {
-				// TODO: NOT IMPLEMENTED YET (as source is not properly
-				// implemented)
-			} else if (lastDone.action == HistoryObject.ACTION.TOGGLE_DISPLAY_DEBUG) {
-				toggleDisplayDebug((Boolean) lastDone.details, false);
-			} else if (lastDone.action == HistoryObject.ACTION.TOGGLE_DISPLAY_WORDS) {
-				toggleDisplayWords((Boolean) lastDone.details, false);
-			} else if (lastDone.action == HistoryObject.ACTION.TOGGLE_DISPLAY_EDGES) {
-				toggleDisplayEdges((Boolean) lastDone.details, false);
-			} else if (lastDone.action == HistoryObject.ACTION.TOGGLE_DISPLAY_FORCES) {
-				toggleDisplayForces((Boolean) lastDone.details, false);
-			} else if (lastDone.action == HistoryObject.ACTION.TOGGLE_DISPLAY_NODES) {
-				toggleDisplayNodes((Boolean) lastDone.details, false);
-			} else if (lastDone.action == HistoryObject.ACTION.TOGGLE_SMOOTH_FONT) {
-				toggleSmoothFont((Boolean) lastDone.details, false);
-			} else if (lastDone.action == HistoryObject.ACTION.TOGGLE_SMOOTH_ANIMATION) {
-				toggleSmoothAnimation((Boolean) lastDone.details, false);
-			} else if (lastDone.action == HistoryObject.ACTION.PAUSE_PHYSICS) {
-				togglePause((Boolean) lastDone.details, false);
-			} else if (lastDone.action == HistoryObject.ACTION.ZOOM_IN) {
-				zoomOutPressed(false);
-			} else if (lastDone.action == HistoryObject.ACTION.ZOOM_OUT) {
-				zoomInPressed(false);
+			}else if(lastDone.action == HistoryObject.ACTION.CHANGE_CORPUS_SLIDER){
+				theGUI.corpusSlider.setValue((Integer) lastDone.details);
+				System.out.println("Gotta undo a corpus thing!");
+			}else if(lastDone.action == HistoryObject.ACTION.CHANGE_FILTER_SLIDER){
+				theGUI.filterSlider.setValue((Integer) lastDone.details);
+			}else if(lastDone.action == HistoryObject.ACTION.CENTER_ON_NODE){
+				ScreenSet ss = (ScreenSet) lastDone.details;
+				theScreen.setXoffset(ss.getXOffset());
+				theScreen.setYoffset(ss.getYOffset());
+				theScreen.setZoomLevel(ss.getZoomLevel());
 			}
 			history.remove(lastDone);
 			theGUI.menuBar.requestFocus();
 		}
+		currentlyInUndoMethod = false;
 	}
 
 
@@ -1151,11 +1119,8 @@ public class Controller extends JApplet implements ActionListener,
 	 *
 	 * @param addToHistory the add to history
 	 */
-	public void helpPressed(boolean addToHistory) {
+	public void helpPressed() {
 		JOptionPane.showMessageDialog(theGUI.theFrame, theGUI.helpText);
-		if (addToHistory) {
-			// TODO: fix this
-		}
 	}
 
 	
@@ -1164,12 +1129,9 @@ public class Controller extends JApplet implements ActionListener,
 	 *
 	 * @param addToHistory the add to history
 	 */
-	public void aboutPressed(boolean addToHistory) {
+	public void aboutPressed() {
 		JOptionPane.showMessageDialog(theGUI.theFrame, theGUI.aboutText,
 				"About", JOptionPane.INFORMATION_MESSAGE, theGUI.theLogo);
-		if (addToHistory) {
-			// TODO: fix this
-		}
 	}
 
 
@@ -1178,26 +1140,23 @@ public class Controller extends JApplet implements ActionListener,
 	 *
 	 * @param addToHistory the add to history
 	 */
-	public void searchPressed(boolean addToHistory) {
-		// TODO: FIX THIS PART BELOW
-		System.out.println(sidePane.getInputText().trim());
-		if (wordIndex.lookUpWord(sidePane.getInputText().trim(), currentCorpus) == false) {
+	public void searchPressed() {
+		String s = sidePane.getInputText().trim();
+		if (wordIndex.lookUpWordGlobally(s, corpuses) == -1) {
 			sidePane.setOutputText("That word is not significant in the corpus.");
 		} else {
-			Vector<LinkInformation> results = null;
+			LinkedHashMap<String, LinkInformation> results = null;
 			try {
-				results = wordIndex.lookupWordNeighbours(sidePane
-						.getInputText().trim(), currentCorpus);
+				results = wordIndex.lookupCombinedWordNeighbours(s, corpusA, percentageA, corpusB, percentageB, Corpus.LIMIT_TYPE.NUMBER, lastSliderVal);
 			} catch (Exception e1) {
 				e1.printStackTrace();
 			}
 
 			if (results != null) {
-				String toSet = "";
-				for (int x = 0; x < results.size(); x++) {
-					toSet += results.get(x).getWord1() + " : "
-							+ results.get(x).getWord2() + "  : "
-							+ results.get(x).getAffinity() + "\n";
+				String toSet = "--" + s + " --";
+				for (LinkInformation li : results.values()) {
+					toSet += li.getTheOtherWord(s) + ":" + li.getAffinity();
+					//TODO: add frequency info here.
 				}
 				sidePane.setOutputText(toSet);
 			} else {
@@ -1207,12 +1166,52 @@ public class Controller extends JApplet implements ActionListener,
 		}
 	}
 
+	
+	
+	public void locatePressed() {
+		
+		
+		
+		SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+
+			public String doInBackground() {
+				String tempString = JOptionPane.showInputDialog(
+						"Please type the word to locate below:").trim();
+				return tempString;
+			}
+
+			public void done() {
+				String temp = null;
+				try {
+					temp = get();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				if(temp == null){
+					return;
+				}else if(!currentNodes.containsKey(temp)){
+					JOptionPane.showMessageDialog(null,"Sorry, that word is not currently in the visualization.");
+				}else{
+					WordNode tempNode = currentNodes.get(temp);
+					JOptionPane.showMessageDialog(null,"Found the word '" + temp + "', press OK to center on it.");
+					history.add(0, new HistoryObject(HistoryObject.ACTION.CENTER_ON_NODE,new ScreenSet(theScreen.getXoffset(), theScreen.getYoffset(), theScreen.getZoomLevel())));
+					theScreen.center(tempNode);
+				}
+				
+			}
+		};
+		worker.execute();
+
+	}
+	
+	
+	
 	/**
 	 * Method called if the import button is pressed.
 	 *
 	 * @param addToHistory the add to history
 	 */
-	public void importPressed(boolean addToHistory) {
+	public void importPressed() {
 		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
 			Boolean userCancelled = false;
 			Corpus temp = null;
@@ -1244,7 +1243,10 @@ public class Controller extends JApplet implements ActionListener,
 								.getName());
 						corpuses.put(index, temp);
 						if (index == 0) {
-							currentCorpus = corpuses.get(0);
+							corpusA = temp;
+							corpusB = null;
+							percentageA = 100;
+							percentageB = 0;
 						}
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -1270,259 +1272,91 @@ public class Controller extends JApplet implements ActionListener,
 	 * @see javax.swing.event.ChangeListener#stateChanged(javax.swing.event.ChangeEvent)
 	 */
 	public void stateChanged(ChangeEvent e) {
-		/*
-		 * TODO::: complete this section
-		 */
-
 		if (e.getSource() == theGUI.filterSlider) {
+			if(!currentlyInUndoMethod){
+				history.add(0,new HistoryObject(HistoryObject.ACTION.CHANGE_FILTER_SLIDER, new Integer(oldFilterValue)));
+			}
 			theGUI.filterSlider.setEnabled(false);
-			if (lastSelected != null) {
+			oldFilterValue = theGUI.filterSlider.getValue();
+			if(lastSelected != null ){
 				updateDetailsInScreen(lastSelected);
 			}
-			theGUI.filterSlider.setEnabled(false);
-			int x = theGUI.filterSlider.getValue();
-			if (oldFilterValue > x) {
-				System.out.println("lowering the slider");
-				Vector<Particle> particles = physics.getParticles();
-				for (int a = 0; a < particles.size(); a++) {
-					WordNode wn = (WordNode) particles.get(a);
-					if (wn.isNodeOpen()) {
-						Vector<LinkInformation> inverseNeighbours = currentCorpus
-								.getInverseNeighbours(wn.getWord(),
-										Corpus.LIMIT_TYPE.PERCENTAGE, x);
-
-						for (int d = 0; d < inverseNeighbours.size(); d++) {
-							String theWord = "";
-							if (wn.getWord().equals(
-									inverseNeighbours.get(d).getWord1())) {
-								theWord = inverseNeighbours.get(d).getWord2()
-										.trim();
-							} else {
-								theWord = inverseNeighbours.get(d).getWord1()
-										.trim();
-							}
-
-							WordNode tempNode = currentNodes.get(theWord);
-							if (wn.getNeighbours().contains(tempNode)) {
-								// contains a thing which must be deleted!
-								// TODO: combine this int oa handy little
-								// function
-								WordLink tempSpring = wn.getSpringTo(tempNode);
-								if (!tempNode.isNodeOpen()
-										&& tempNode.getNeighbours().size() == 1) {
-									removeAllAttractionsToNode(tempNode);
-									wn.getNeighbours().remove(tempNode);
-									physics.removeSpring(tempSpring);
-									physics.removeParticle(tempNode);
-									wn.removeLink(tempSpring);
-									currentNodes.remove(tempNode.getWord());
-								} else if (tempNode.getNeighbours().size() > 1) {
-									System.out.println("Removing link between "
-											+ tempNode.getWord() + " and "
-											+ wn.getWord());
-									wn.getNeighbours().remove(tempNode);
-									tempNode.getNeighbours().remove(wn);
-									physics.removeSpring(tempSpring);
-									tempNode.removeLink(tempSpring);
-									wn.removeLink(tempSpring);
-								}
-
-							}
-
-						}
-
-					}
-
-				}
-			} else if (oldFilterValue < x) {
-				System.out.println("increasing the slider");
-				// get all of the new neighbours, and go through comparing..
-				Vector<Particle> particles = physics.getParticles();
-				for (int a = 0; a < particles.size(); a++) {
-					WordNode wn = (WordNode) particles.get(a);
-					if (wn.isNodeOpen()) {
-						Vector<LinkInformation> neighbours = currentCorpus
-								.getNeighbours(wn.getWord(),
-										Corpus.LIMIT_TYPE.PERCENTAGE, x);
-						for (int b = 0; b < neighbours.size(); b++) {
-
-							String theWord = "";
-							boolean wasWord1 = false;
-							if (wn.getWord().equals(
-									neighbours.get(b).getWord1())) {
-								theWord = neighbours.get(b).getWord2().trim();
-								wasWord1 = true;
-							} else {
-								theWord = neighbours.get(b).getWord1().trim();
-								wasWord1 = false;
-							}
-
-							if (!wn.getNeighbours().contains(theWord)) {
-
-								/*
-								 * TODO:: Make this into a seperate function,
-								 * along with open node
-								 */
-
-								WordNode tempNode = null;
-								if (currentNodes.containsKey(theWord)) {
-									// current node Exists
-									tempNode = currentNodes.get(theWord);
-								} else {
-									// node doesnt already exist (so have to
-									// create a new node first)
-									tempNode = new WordNode(wn.position().x()
-											+ 25
-											+ ((int) (100 * Math.random())), wn
-											.position().y()
-											+ ((int) (100 * Math.random())), 1,
-											 theWord, 0);
-									if (wasWord1) {
-										tempNode.setFrequency(neighbours.get(b).frequency1);
-									} else {
-										tempNode.setFrequency(neighbours.get(b).frequency2);
-									}
-									physics.addParticle(tempNode);
-									currentNodes.put(theWord.trim(), tempNode);
-								}
-								if (physics.getSpring(tempNode, wn) == null) {
-									double offset = 0 - wordIndex.totalMinAffinity;
-									double lineLength = 500 - (((neighbours
-											.get(b).getAffinity() + offset) / (wordIndex.totalMaxAffinity + offset)) * 400);
-									double lineWidth = 50 - (lineLength / 10);
-									WordLink tempSpring = new WordLink(wn,tempNode, (int) lineLength, 0.2F, 0.4F, (int) lineWidth,
-											1);
-									physics.addSpring(tempSpring);
-									tempNode.addNeighbour(wn);
-									wn.addNeighbour(tempNode);
-									tempNode.addLink(tempSpring);
-									wn.addLink(tempSpring);
-									// add a repulsion between every other node
-									// and this one
-									for (int c = 0; c < physics.getParticles()
-											.size(); c++) {
-										WordNode n = (WordNode) physics
-												.getParticles().get(c);
-										if (n != tempNode) {
-											WordAttraction tempAttraction = new WordAttraction(
-													tempNode, n, -50000, 15);
-											n.addAttraction(tempAttraction);
-											tempNode.addAttraction(tempAttraction);
-											physics.addAttraction(tempAttraction);
-										}
-									}
-								}
-
-							}
-
-						}
-					}
-
-				}
-
-				/*
-				 * get neighbours again, and add any that are missing
-				 */
-			}
-
 			theGUI.filterSlider.setEnabled(true);
-			oldFilterValue = theGUI.filterSlider.getValue();
-		} else
-
-		if (e.getSource() == theGUI.corpusSlider) {
+		} else if (e.getSource() == theGUI.corpusSlider) {
+			theGUI.corpusSlider.setEnabled(false);
 			int x = theGUI.corpusSlider.getValue();
-		
-			if(x == lastSliderVal){
-				return;
-			}else{
-				lastSliderVal = x;
+			if(!currentlyInUndoMethod){
+				history.add(0,new HistoryObject(HistoryObject.ACTION.CHANGE_CORPUS_SLIDER, new Integer(oldCorpusValue)));
+			
 			}
-			
-			int max = theGUI.corpusSlider.getMaximum();
-			int min = theGUI.corpusSlider.getMinimum();
-			
-			
-			Corpus corpusA = null;
-			Corpus corpusB = null;
-			int percentageB = 0;
-			int percentageA = 0;
-		
-			int remainder = x%10;
-			
-			if(x == max){
-				corpusB = corpuses.get(new Integer(x));
-				corpusA = corpuses.get(new Integer(x -10));
-				percentageA = 0;
-				percentageB = 100;
-			}else{
-				corpusA = corpuses.get(new Integer(x    - remainder    ));
-				corpusB = corpuses.get(new Integer(x + (10-remainder)       ));
-				percentageB = 10*(remainder);
-				percentageA = 10*(10 - remainder);
-			}
-
-			
-	
-			
-			
-			Double strengthInA = 0D;
-			Double strengthInB = 0D;
-	
-			
-			
-			
-			Vector<Particle> particles = physics.getParticles();
-			for (int c = 0; c < particles.size(); c++) {
-				WordNode tempNode = (WordNode) particles.get(c);
-				strengthInA=corpusA.getWordFrequency(tempNode.getWord());
-				strengthInB=corpusB.getWordFrequency(tempNode.getWord());
-				strengthInA=((strengthInA*percentageA)/100);
-				strengthInB=((strengthInB*percentageB)/100);
-				
-				Double frequency = ((strengthInA  + strengthInB)/2);
-				tempNode.setFrequency(frequency);
-				
-				if(frequency == 0){
-					tempNode.setInCurrentCorpus(false);
+			oldCorpusValue = x;
+				int offset = 0;	
+				int indexA = 0;
+				int indexB = 0;
+				if(x == theGUI.corpusSlider.getMaximum()){
+					offset = 0;	
+					indexA = x;
+					indexB = x - 10;
+					percentageA =  100 ;
+					percentageB =  0;
 				}else{
-					tempNode.setInCurrentCorpus(true);
+					offset = x%10;	
+					indexA = x - offset;
+					indexB = x + (10 - offset);
+					percentageA =  100 - (10*offset);
+					percentageB =  0 + (10*offset) ;
 				}
+				corpusA = corpuses.get(new Integer(indexA));
+				corpusB = corpuses.get(new Integer(indexB));
 				
-				
-				
-			}
-			
-			
-			
-			
-			/*
-			if (currentCorpus != corpuses.get(x)) {
-				currentCorpus = corpuses.get(x);
-				updateToNewCorpus();
-			}
-			*/
-			
-			// start of method for a smooth slider..
-
-			
-		//    Collection<WordNode> c = currentNodes.values();
-		    
-		    //obtain an Iterator for Collection
-		  //  java.util.Iterator<WordNode> itr = c.iterator();
-		 
-		    //iterate through HashMap values iterator
-		//    while(itr.hasNext()){
-		      
-		   // boolean existInCorpusA = false;
-		  //  boolean existInCorpusB = false;
-		    	
-		    	
-		 //  }
 		}
-
+		
+		for(WordNode wn : currentNodes.values()){
+			updateNodeStatus(wn);
+		}
+		
+		
+	//TODO: fix this!	
+		Object[] sArray =  currentNodes.keySet().toArray();
+		
+		for(int x = 0; x < sArray.length; x++){
+			String s = (String) sArray[x];
+			WordNode wn = currentNodes.get(s);
+			if(wn != null && wn.isNodeOpen()){
+				updateNodeLinks(wn,wordIndex.lookupCombinedWordNeighbours(wn.getWord(), corpusA, percentageA, corpusB, percentageB, Corpus.LIMIT_TYPE.NUMBER,  oldFilterValue), false);
+			}
+			
+		}
+		theGUI.corpusSlider.setEnabled(true);
 	}
 
 	
+	
+	public void removeLink(WordLink link, boolean deleteNodes){
+		WordNode A = (WordNode) link.getOneEnd();
+		WordNode B = (WordNode) link.getTheOtherEnd();
+		
+		A.getNeighbours().remove(B);
+		B.getNeighbours().remove(A);
+		// remove spring connecting them
+		physics.removeSpring(link);
+		A.removeLink(link);
+		B.removeLink(link);
+		
+		if(deleteNodes){
+			if(!A.isNodeOpen() && A.getLinks().size() == 0){
+				removeAllAttractionsToNode(A);
+				currentNodes.remove(A.getWord());
+				physics.removeParticle(A);
+			}
+			
+			if(!B.isNodeOpen() && B.getLinks().size() == 0){
+				removeAllAttractionsToNode(B);
+				currentNodes.remove(B.getWord());
+				physics.removeParticle(B);
+			}
+		}
+	}
 	
 	
 
@@ -1735,4 +1569,4 @@ public class Controller extends JApplet implements ActionListener,
 	 */
 	public void mouseMoved(MouseEvent e) {
 	}
-}
+}  
