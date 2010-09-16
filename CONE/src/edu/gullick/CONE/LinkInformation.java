@@ -4,7 +4,7 @@ package edu.gullick.CONE;
 /**
  * The Class LinkInformation - holds all of the information about a link between two words.
  */
-public class LinkInformation {
+public class LinkInformation implements Comparable{
 	
 	/** The word1. */
 	public String word1 = "";
@@ -26,6 +26,9 @@ public class LinkInformation {
 	
 	/** The frequency of both words together. */
 	public double frequencyBoth = 0.0D;
+
+
+
 
 	/**
 	 * Instantiates a new link information.
@@ -127,39 +130,61 @@ public class LinkInformation {
 		this.tscore = tscore;
 	}
 
-	/**
-	 * Gets the frequency1.
-	 *
-	 * @return the frequency1
-	 */
-	public double getFrequency1() {
-		return frequency1;
+	public boolean setFrequencyOfWord(String x, Double y){
+		if(word1.equals(x)){
+			frequency1 = y;
+			return true;
+		}else if(word2.equals(x)){
+			frequency2 = y;
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	public String getTheOtherWord(String x){
+		if(x.equals(word1)){
+			return word2;
+		}else if(x.equals(word2)){
+			return word1;
+		}else{
+			return null;
+		}
+	}
+	
+	public Double getFrequencyOfWord(String x){
+		if(word1.equals(x)){
+			return this.frequency1;
+		}else if(word2.equals(x)){
+			return this.frequency1;
+		}else{
+			return null;
+		}
+	}
+	
+
+	public double getFrequencyBoth() {
+		return frequencyBoth;
 	}
 
-	/**
-	 * Sets the frequency1.
-	 *
-	 * @param frequency1 the new frequency1
-	 */
-	public void setFrequency1(double frequency1) {
-		this.frequency1 = frequency1;
+
+
+
+	public void setFrequencyBoth(double frequencyBoth) {
+		this.frequencyBoth = frequencyBoth;
 	}
 
-	/**
-	 * Gets the frequency2.
-	 *
-	 * @return the frequency2
-	 */
-	public double getFrequency2() {
-		return frequency2;
+
+
+
+	public int compareTo(Object o) {
+		  if (this.getAffinity() == ((LinkInformation) o).getAffinity())
+	            return 0;
+	        else if (this.getAffinity() > ((LinkInformation) o).getAffinity())
+	            return 1;
+	        else
+	            return -1;
 	}
 
-	/**
-	 * Sets the frequency2.
-	 *
-	 * @param frequency2 the new frequency2
-	 */
-	public void setFrequency2(double frequency2) {
-		this.frequency2 = frequency2;
-	}
+	
 }
