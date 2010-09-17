@@ -1,5 +1,6 @@
 package edu.gullick.CONE;
-import java.util.Vector;
+import java.util.LinkedHashMap;
+
 import edu.gullick.physics2D.Particle;
 
 /**
@@ -11,13 +12,13 @@ import edu.gullick.physics2D.Particle;
 public class WordNode extends Particle {
 
 	/** The attractions acting upon the particle. */
-	private Vector<WordAttraction> attractions = new Vector<WordAttraction>();
+	private LinkedHashMap<String,WordAttraction> attractions = new LinkedHashMap<String,WordAttraction>();
 	
 	/** The links that are acting upon the particle */
-	private Vector<WordLink> links = new Vector<WordLink>();
+	private LinkedHashMap<String, WordLink> links = new LinkedHashMap<String, WordLink>();
 	
 	/** The neighbours next to the particle */
-	private Vector<WordNode> neighbours = new Vector<WordNode>();
+	private LinkedHashMap<String,WordNode> neighbours = new LinkedHashMap<String,WordNode>();
 
 	/** boolean representing the open status of the node */
 	private boolean nodeOpen = false;
@@ -31,21 +32,17 @@ public class WordNode extends Particle {
 	/** boolean representing whether the node is currently selected */
 	private boolean isSelected = false;
 	
-	/** boolean representing whether the node is in the current corpus */
-	private boolean isInCurrentCorpus = true;
-
-	
 	
 	
 	
 	/**
 	 * Instantiates a new word node.
 	 *
-	 * @param x the x
-	 * @param y the y
-	 * @param w the w
-	 * @param word the word
-	 * @param frequency the frequency
+	 * @param x the x position
+	 * @param y the y position
+	 * @param w the w weight of the node
+	 * @param word the word the the node represents
+	 * @param frequency the frequency the frequency of the Node
 	 */
 	public WordNode(float x, float y, float w, String word,	double frequency) {
 		super(w);
@@ -53,9 +50,9 @@ public class WordNode extends Particle {
 		this.position.setY(y);
 		this.word = word;
 		this.frequency = frequency;
-		attractions = new Vector<WordAttraction>();
-		links = new Vector<WordLink>();
-		neighbours = new Vector<WordNode>();
+		attractions = new LinkedHashMap<String,WordAttraction>();
+		links = new LinkedHashMap<String,WordLink>();
+		neighbours = new LinkedHashMap<String, WordNode>();
 
 	}
 
@@ -169,7 +166,7 @@ public class WordNode extends Particle {
 	 *
 	 * @return the attractions
 	 */
-	public Vector<WordAttraction> getAttractions() {
+	public LinkedHashMap<String,WordAttraction> getAttractions() {
 		return attractions;
 	}
 
@@ -178,7 +175,7 @@ public class WordNode extends Particle {
 	 *
 	 * @param attractions the new attractions
 	 */
-	public void setAttractions(Vector<WordAttraction> attractions) {
+	public void setAttractions(LinkedHashMap<String,WordAttraction> attractions) {
 		this.attractions = attractions;
 	}
 
@@ -188,7 +185,7 @@ public class WordNode extends Particle {
 	 *
 	 * @param links the new links
 	 */
-	public void setLinks(Vector<WordLink> links) {
+	public void setLinks(LinkedHashMap<String,WordLink> links) {
 		this.links = links;
 	}
 
@@ -197,7 +194,7 @@ public class WordNode extends Particle {
 	 *
 	 * @return the links
 	 */
-	public Vector<WordLink> getLinks() {
+	public LinkedHashMap<String,WordLink> getLinks() {
 		return links;
 	}
 
@@ -206,7 +203,7 @@ public class WordNode extends Particle {
 	 *
 	 * @param neighbours the new neighbours
 	 */
-	public void setNeighbours(Vector<WordNode> neighbours) {
+	public void setNeighbours(LinkedHashMap<String,WordNode> neighbours) {
 		this.neighbours = neighbours;
 	}
 
@@ -215,7 +212,7 @@ public class WordNode extends Particle {
 	 *
 	 * @return the neighbours
 	 */
-	public Vector<WordNode> getNeighbours() {
+	public LinkedHashMap<String,WordNode> getNeighbours() {
 		return neighbours;
 	}
 
@@ -225,7 +222,11 @@ public class WordNode extends Particle {
 	 * @param x the x
 	 */
 	public void addAttraction(WordAttraction x) {
-		attractions.add(x);
+		if(x.getOneEnd() == this){
+			attractions.put(((WordNode)x.getTheOtherEnd()).getWord(),x);
+		}else{
+			attractions.put(((WordNode)x.getOneEnd()).getWord(),x);
+		}
 	}
 
 	/**
@@ -235,8 +236,39 @@ public class WordNode extends Particle {
 	 * @return true, if successful
 	 */
 	public boolean removeAttraction(WordAttraction x) {
-		return attractions.remove(x);
+		if(x.getOneEnd() == this){
+			if(attractions.remove(((WordNode)x.getTheOtherEnd()).getWord()) != null){
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			if(attractions.remove(((WordNode)x.getOneEnd()).getWord()) != null){
+				return true;
+			}else{
+				return false;
+			}
+		}
 	}
+	
+	/**
+	 * Removes the attraction.
+	 *
+	 * @param x the x
+	 * @return true, if successful
+	 */
+	public boolean removeAttraction(String x) {
+	
+			if(attractions.remove(x) != null){
+				return true;
+			}else{
+				return false;
+			}
+
+	}
+
+	
+	
 
 	/**
 	 * Adds the link.
@@ -244,7 +276,11 @@ public class WordNode extends Particle {
 	 * @param x the x
 	 */
 	public void addLink(WordLink x) {
-		links.add(x);
+		if(x.getOneEnd() == this){
+			links.put(((WordNode)x.getTheOtherEnd()).getWord(),x);
+		}else{
+			links.put(((WordNode)x.getOneEnd()).getWord(),x);
+		}
 	}
 
 	/**
@@ -254,8 +290,37 @@ public class WordNode extends Particle {
 	 * @return true, if successful
 	 */
 	public boolean removeLink(WordLink x) {
-		return links.remove(x);
+		if(x.getOneEnd() == this){
+			if(links.remove(((WordNode)x.getTheOtherEnd()).getWord()) != null){
+				return true;
+			}else{
+				return false;
+			}
+		}else{
+			if(links.remove(((WordNode)x.getOneEnd()).getWord()) != null){
+				return true;
+			}else{
+				return false;
+			}
+		}
 	}
+	
+	
+	/**
+	 * Removes the link.
+	 *
+	 * @param x the x
+	 * @return true, if successful
+	 */
+	public boolean removeLink(String x) {
+		if(links.remove(x) != null){
+				return true;
+			}else{
+				return false;
+		}
+	}
+
+	
 
 	/**
 	 * Adds the neighbour.
@@ -263,7 +328,7 @@ public class WordNode extends Particle {
 	 * @param x the x
 	 */
 	public void addNeighbour(WordNode x) {
-		neighbours.add(x);
+			neighbours.put(((WordNode)x).getWord(),x);
 	}
 
 	/**
@@ -273,8 +338,32 @@ public class WordNode extends Particle {
 	 * @return true, if successful
 	 */
 	public boolean removeNeighbour(WordNode x) {
-		return neighbours.remove(x);
+		if(neighbours.remove(x.getWord()) != null){
+			return true;
+		}else{
+			return false;
+		}
 	}
+	
+	
+	/**
+	 * Removes the neighbour.
+	 *
+	 * @param x the x
+	 * @return true, if successful
+	 */
+	public boolean removeNeighbour(String x) {
+		if(neighbours.remove(x) != null){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	
+	
+	
+	
 
 	/**
 	 * Gets the spring to.
@@ -283,33 +372,12 @@ public class WordNode extends Particle {
 	 * @return the spring to
 	 */
 	public WordLink getSpringTo(WordNode x) {
-		for (int q = 0; q < links.size(); q++) {
-			WordLink temp = links.get(q);
-			if (temp.getOneEnd() == x || temp.getTheOtherEnd() == x) {
-				return temp;
-			}
-		}
-		return null;
+		return links.get(x.getWord());
 	}
 
 
-	/**
-	 * Sets the in current corpus.
-	 *
-	 * @param isInCurrentCorpus the new in current corpus
-	 */
-	public void setInCurrentCorpus(boolean isInCurrentCorpus) {
-		this.isInCurrentCorpus = isInCurrentCorpus;
-	}
-
-	/**
-	 * Checks if is in current corpus.
-	 *
-	 * @return true, if is in current corpus
-	 */
-	public boolean isInCurrentCorpus() {
-		return isInCurrentCorpus;
-	}
+	
+	
 
 }
  
