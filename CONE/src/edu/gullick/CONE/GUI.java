@@ -6,7 +6,9 @@ import javax.swing.*;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -22,19 +24,21 @@ import java.util.Vector;
  * In an MVC model, this would by considered the view component.
  */
 public class GUI {
-
 	/*
 	 * GLOBAL VARIABLES
 	 */
 	
+	/**Version Number*/
+	public static final String VERSION = "1.0";
+	
 	/** the JFrame that everything is drawn on */
-	public JFrame theFrame = new JFrame("CONE: COllocation Network Explorer v1.0");
+	public JFrame theFrame = new JFrame("CONE: COllocation Network Explorer v" + VERSION);
 
 	/** The JPanel that all of the components are contained within */
 	public JPanel mainPanel = new JPanel(new BorderLayout());
 	
 	/** The lower panel that contains sliders. */
-	public JPanel lowerPanel = new JPanel(new GridLayout(3, 0));
+	public JPanel lowerPanel = new JPanel(new GridLayout(2, 0));
 	
 	/** the Processing.core.PApplet that handles the graphics */
 	public Screen theScreen = null;
@@ -84,8 +88,8 @@ public class GUI {
 	/** The add button. */
 	public JMenuItem addButton = new JMenuItem("Add a Word");
 	
-	/** The t filter button. */
-	public JMenuItem tFilterButton = new JMenuItem("Adjust T-Filter");
+	/** The add button. */
+	public JMenuItem locateButton = new JMenuItem("Locate a Word");
 	
 	/** The delete word button. */
 	public JMenuItem deleteWordButton = new JMenuItem("Delete Word");
@@ -156,23 +160,38 @@ public class GUI {
 
 	/* Strings used in the help menu choices */
 	/** The about text. */
-	public String aboutText = "<html><b>CONE</b>: <b>CO</b>llocation <b>N</b>etwork <b>E</b>xplorer <i>v0.5</i>. <br/>Written by David Gullick at Lancaster University UK  (2010). <br/>Thanks to:<br/>Francois Taiani, <br/>Paul Rayson, <br/>John Mariani </html>";
-
-	/** The help text. */
-	public String helpText = "<html>CONE is a graphical approach to exploring large bodies of text using collocation...<html>";
+	public String aboutText = "<html><b>CONE</b>: <b>CO</b>llocation <b>N</b>etwork <b>E</b>xplorer <i>v" + VERSION + "</i>. <br/>Written by David Gullick at Lancaster University UK  (2010). <br/>Thanks to:<br/>Francois Taiani, <br/>Paul Rayson, <br/>John Mariani, <br/>Scott Piao.<br/><br/><hr/><br/>This program is free software: you can redistribute it and/or modify"
+    + "<br/>it under the terms of the GNU General Public License as published by"
+    + "<br/>the Free Software Foundation, either version 3 of the License, or"
+    + "<br/> (at your option) any later version."
+    + "<br/>"
+    + "<br/> This program is distributed in the hope that it will be useful,"
+    + "<br/>but WITHOUT ANY WARRANTY; without even the implied warranty of"
+    + "<br/>MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the"
+    + "<br/>GNU General Public License for more details."
+    + "<br/>"
+    + "<br/>You should have received a copy of the GNU General Public License"
+    + "<br/>along with this program.  If not, see http://www.gnu.org/licenses/"
+	+ "<br/><br/><hr/></html>";
+	
+	/** The help text. 
+	 *  TODO: FINISH THIS TEXT.  
+	 */
+	public String helpText = "<html><b>CONE</b>: <b>CO</b>llocation <b>N</b>etwork <b>E</b>xplorer <i>v" + VERSION + "</i> is a graphical approach to exploring large bodies of text, using collocation.<br/>For more information please read the README file included with this application, also avaliable at: <br/>http://code.google.com/p/collocation-network-explorer/ <html>";  
 
 	/** The filter slider. */
 	public JSlider filterSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
 	
 	/** The corpus slider. */
-	public JSlider corpusSlider = new JSlider(JSlider.HORIZONTAL, 0, 0, 0);
+	public JSlider corpusSlider = new JSlider(JSlider.VERTICAL, 0, 0, 0);
 
 	/* Progress bar seen at the bottom of the page. */
 	/** The prog bar. */
 	public JProgressBar progBar = new JProgressBar();
 
-	
-	
+	//so that user cant drag the slider when there isnt multiple corpuses.
+	private boolean corpusSliderActive = false;
+
 	
 	/*
 	 * The constructor for the GUI class.
@@ -197,10 +216,6 @@ public class GUI {
 
 		theLogo = createImageIcon("/data/logo.png", "the logo");
 
-		/* Setting up the menu + shortcuts
-		 * TODO: sort out the shortcuts for the other tab
-		 */
-		
 		fileMenu.setMnemonic(KeyEvent.VK_F);
 		toolsMenu.setMnemonic(KeyEvent.VK_T);
 		helpMenu.setMnemonic(KeyEvent.VK_H);
@@ -220,9 +235,12 @@ public class GUI {
 		toolsMenu.add(addButton);
 		addButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A,
 				ActionEvent.CTRL_MASK));
-		toolsMenu.add(tFilterButton);
-		tFilterButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T,
+		
+		toolsMenu.add(locateButton);
+		locateButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L,
 				ActionEvent.CTRL_MASK));
+		
+		
 		toolsMenu.add(deleteWordButton);
 		deleteWordButton.setAccelerator(KeyStroke.getKeyStroke(
 				KeyEvent.VK_DELETE, 0));
@@ -329,7 +347,7 @@ public class GUI {
 		resetButton.addActionListener(theController);
 		centerButton.addActionListener(theController);
 		addButton.addActionListener(theController);
-		tFilterButton.addActionListener(theController);
+		locateButton.addActionListener(theController);
 		aboutButton.addActionListener(theController);
 		helpButton.addActionListener(theController);
 		deleteWordButton.addActionListener(theController);
@@ -337,19 +355,35 @@ public class GUI {
 		filterSlider.addChangeListener(theController);
 		filterSlider.setMajorTickSpacing(10);
 		filterSlider.setMinorTickSpacing(5);
+		filterSlider.setSnapToTicks(true);
 		filterSlider.setPaintTicks(true);
 		filterSlider.setPaintLabels(true);
 
 		corpusSlider.addChangeListener(theController);
-		corpusSlider.setMajorTickSpacing(1);
+		corpusSlider.setMajorTickSpacing(10);
+		corpusSlider.setMinorTickSpacing(1);
 		corpusSlider.setPaintTicks(true);
 		corpusSlider.setPaintLabels(true);
 		corpusSlider.setEnabled(false);
 		corpusSlider.setSnapToTicks(true);
+	//	corpusSlider.setUI(new VerticalLabelSliderUI(corpusSlider,10));
+		
+		Dictionary<Integer, JLabel> labels = new Hashtable<Integer, JLabel>();
+		JLabel l = new JLabel("No Data.");
+		labels.put(0, l);
+		corpusSlider.setLabelTable(labels);
+		
+		
+		
 
 		/* Adding everything to the GUI */
 		mainPanel.add(theScreen, BorderLayout.CENTER);
 		theFrame.setJMenuBar(menuBar);
+		
+		 Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+		 int x = (screen.width-width)/2;
+		 int y = (screen.height-height)/2;
+		 theFrame.setBounds(x,y,width,height);
 
 		/* Final frame configurations */
 		theFrame.setDefaultCloseOperation(3);
@@ -358,9 +392,20 @@ public class GUI {
 		theFrame.setContentPane(tabbedPane);
 		theFrame.setSize(width, height);
 
+		
+
 		/* Setting up the progress bar */
-		lowerPanel.add(filterSlider);
-		lowerPanel.add(corpusSlider);
+
+		JPanel filterPanel = new JPanel(new BorderLayout());
+		filterPanel.add(filterSlider, BorderLayout.CENTER);
+		filterPanel.add(new JLabel("Filter ( max number of links per node )",null,JLabel.CENTER), BorderLayout.NORTH);
+		lowerPanel.add(filterPanel);
+		//lowerPanel.add(corpusSlider);
+		
+		JPanel corpusPanel = new JPanel(new BorderLayout());
+		corpusPanel.add(corpusSlider, BorderLayout.CENTER);
+		corpusPanel.add(new JLabel("Corpus Select", null, JLabel.CENTER), BorderLayout.NORTH);
+		mainPanel.add(corpusPanel, BorderLayout.EAST);
 		lowerPanel.add(progBar);
 		mainPanel.add(lowerPanel, BorderLayout.SOUTH);
 		progBar.setStringPainted(true);
@@ -375,6 +420,20 @@ public class GUI {
 	
 	
 	
+	public void reset(){
+		
+		initProgressbar(0,0);
+		setProgressBarString("No data loaded.");
+		corpusSlider.setMinimum(0);
+		corpusSlider.setValue(0);
+		corpusSlider.setMaximum(0);
+		Dictionary<Integer, JLabel> labels = new Hashtable<Integer, JLabel>();
+		JLabel l = new JLabel("No Data.");
+		labels.put(0, l);
+		corpusSlider.setLabelTable(labels);
+		corpusSlider.setEnabled(false);
+		corpusSliderActive = false;
+	}
 	
 	
 	/**
@@ -455,15 +514,7 @@ public class GUI {
 	 * @return the label string 
 	 */
 	public String makeLabelString(String s, int key) {
-		String toReturn = "";
-
-		if (key % 2 == 0) {
-			toReturn += "\n";
-		}
-
-		toReturn += s;
-
-		return toReturn;
+		return s.substring(0, s.lastIndexOf('.'));
 	}
 
 	
@@ -474,41 +525,36 @@ public class GUI {
 	 * @param label :the label for the slider
 	 * @return the int :the position on the slider
 	 */
-	public int addCorpusToSlider(String label) {
+	public int  addCorpusToSlider(String label) {
 
 		/* If the slider currently has no entries */
-		if (corpusSlider.getMaximum() == 0) {
-			Dictionary<Integer, Component> labels = new Hashtable<Integer, Component>();
-			corpusSlider.setEnabled(true);
-			corpusSlider.setMinimum(1);
-			corpusSlider.setMaximum(1);
-			corpusSlider.setValue(1);
-
-			JLabel l = new JLabel(makeLabelString(label, 1));
-			labels.put(1, l);
-
+		if (!corpusSliderActive) {
+			Dictionary<Integer, JLabel> labels = new Hashtable<Integer, JLabel>();
+			JLabel l = new JLabel(makeLabelString(label, 0));
+			labels.put(0, l);
 			corpusSlider.setLabelTable(labels);
 			corpusSlider.setEnabled(false);
-			corpusSlider.validate();
-			corpusSlider.update(corpusSlider.getGraphics());
-			corpusSlider.updateUI();
-			return 1;
+			corpusSliderActive = true;
+			return 0;
 		} else {
-
-			Dictionary<Integer, Component> labels = corpusSlider.getLabelTable();
-			corpusSlider.setEnabled(true);
-			int newValue = corpusSlider.getMaximum() + 1;
-
+			Dictionary<Integer, JLabel> labels = (Dictionary<Integer, JLabel>)corpusSlider.getLabelTable();
+			int oldValue = corpusSlider.getMaximum();
+			int newValue = oldValue + 10;
+			for(int x = oldValue + 1 ; x < newValue; x++ ){
+					labels.put(x,new JLabel(""));
+			}
+			
 			JLabel l = new JLabel(makeLabelString(label, newValue));
 			labels.put(newValue, l);
-			corpusSlider.setMaximum(newValue);
 			corpusSlider.setLabelTable(labels);
-			corpusSlider.validate();
-			corpusSlider.update(corpusSlider.getGraphics());
-			corpusSlider.updateUI();
+			corpusSlider.setMaximum(newValue);
+			corpusSlider.setEnabled(true);
 			return newValue;
 		}
 
 	}
+	
+	
+	
 
 }
