@@ -6,6 +6,7 @@ import java.awt.BorderLayout;
 
 /**
  * The Class SidePane - a small JFrame based window for looking up information without using a visualisation.
+ * Currently not particularly useful.
  */
 public class SidePane {
 
