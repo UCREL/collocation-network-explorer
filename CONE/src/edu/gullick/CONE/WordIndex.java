@@ -4,9 +4,19 @@ package edu.gullick.CONE;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import edu.gullick.CONE.Corpus.LIMIT_TYPE;
 
 
 /**
@@ -91,10 +101,13 @@ public class WordIndex {
 
 		}
 
-		updateTotalVals(toReturn);
+		updateTotalVals(toReturn);	
 		return toReturn;
 
 	}
+	
+	
+
 	
 
 	/**
@@ -121,10 +134,144 @@ public class WordIndex {
 	 * @return the vector
 	 * @throws Exception the exception
 	 */
-	public Vector<LinkInformation> lookupWordNeighbours(String word, Corpus theCorpus) throws Exception {
+	public LinkedHashMap<String, LinkInformation> lookupWordNeighbours(String word, Corpus theCorpus) throws Exception {
 		return theCorpus.getNeighbours(word);
 	}
 
+	public LinkedHashMap<String, LinkInformation> lookupCombinedWordNeighbours(String word, Corpus corpusA, int percentageA, Corpus corpusB, int percentageB, LIMIT_TYPE percOrNum, int topNumber){
+		LinkedHashMap<String, LinkInformation> toReturn = new LinkedHashMap<String, LinkInformation>();
+		LinkedHashMap<String,LinkInformation> listFromA = new LinkedHashMap<String,LinkInformation>();
+		
+		LinkedHashMap<String,LinkInformation> listFromB =  new LinkedHashMap<String,LinkInformation>();
+		
+		if(corpusA != null){
+			listFromA = corpusA.getNeighbours(word, percOrNum, topNumber);
+		}
+		if(corpusB != null){
+			listFromB = corpusB.getNeighbours(word, percOrNum, topNumber);
+		}
+		
+		
+		
+		Double percentageAratio = ((double) percentageA)/100D;
+		Double percentageBratio = ((double) percentageB)/100D; 
+		for(Map.Entry<String,LinkInformation> entry : listFromA.entrySet()){
+			String key = entry.getKey();
+			LinkInformation valueA = entry.getValue();
+			if(!toReturn.containsKey(key)){
+				LinkInformation valueB = listFromB.get(key);
+				Double affinityA = valueA.getAffinity();
+				Double affinityB = 0D;
+				Double tscoreA = valueA.getTscore();
+				Double tscoreB = 0D;
+				Double frequency1A = valueA.getFrequencyOfWord(word);
+				Double frequency2A = valueA.getFrequencyOfWord(key);
+				Double frequency1B = 0D;
+				Double frequency2B = 0D;
+				Double frequencyBothA = valueA.getFrequencyBoth();
+				Double frequencyBothB = 0D;
+				if(valueB != null){
+					affinityB = valueB.getAffinity();
+					tscoreB = valueB.getTscore();
+					frequency1B = valueB.getFrequencyOfWord(word);
+					frequency2B = valueB.getFrequencyOfWord(key);
+					frequencyBothB = valueB.getFrequencyBoth();
+				}
+				affinityA = (affinityA*percentageAratio);
+				affinityB = (affinityB*percentageBratio);
+				tscoreA = (tscoreA*percentageAratio);
+				tscoreB =(tscoreB*percentageBratio);
+				frequency1A = (frequency1A*percentageAratio);
+				frequency2A = (frequency2A*percentageAratio);
+				frequency1B =(frequency1B*percentageBratio);
+				frequency2B =(frequency2B*percentageBratio);
+				frequencyBothA = (frequencyBothA*percentageAratio);
+				frequencyBothB =(frequencyBothB*percentageBratio);
+				double averageAffinity = (affinityA+affinityB);
+				double averageTScore = (tscoreA+tscoreB);
+				double averageFrequency1 = (frequency1A+frequency1B);
+				double averageFrequency2 = (frequency2A+frequency2B);
+				double averageFrequencyBoth = (frequencyBothA+frequencyBothB);
+				LinkInformation tempInfo = new LinkInformation(word, key, averageAffinity, averageTScore, averageFrequency1, averageFrequency2, averageFrequencyBoth); 
+				toReturn.put(key, tempInfo);
+			}
+		}
+		for(Map.Entry<String,LinkInformation> entry : listFromB.entrySet()){
+			String key = entry.getKey();
+			LinkInformation valueB = entry.getValue();
+			if(!toReturn.containsKey(key)){
+				LinkInformation valueA = listFromB.get(key);
+				Double affinityA = valueB.getAffinity();
+				Double affinityB = 0D;
+				Double tscoreA = valueB.getTscore();
+				Double tscoreB = 0D;
+				Double frequency1A = valueB.getFrequencyOfWord(word);
+				Double frequency2A = valueB.getFrequencyOfWord(key);
+				Double frequency1B = 0D;
+				Double frequency2B = 0D;
+				Double frequencyBothA = valueB.getFrequencyBoth();
+				Double frequencyBothB = 0D;
+				if(valueA != null){
+					affinityA = valueA.getAffinity();
+					tscoreA = valueA.getTscore();
+					frequency1A = valueA.getFrequencyOfWord(word);
+					frequency2A = valueA.getFrequencyOfWord(key);
+					frequencyBothA = valueA.getFrequencyBoth();
+				}
+				affinityA = (affinityA*percentageAratio);
+				affinityB = (affinityB*percentageBratio);
+				tscoreA = (tscoreA*percentageAratio);
+				tscoreB =(tscoreB*percentageBratio);
+				frequency1A = (frequency1A*percentageAratio);
+				frequency2A = (frequency2A*percentageAratio);
+				frequency1B =(frequency1B*percentageBratio);
+				frequency2B =(frequency2B*percentageBratio);
+				frequencyBothA = (frequencyBothA*percentageAratio);
+				frequencyBothB =(frequencyBothB*percentageBratio);
+				double averageAffinity = (affinityA+affinityB);
+				double averageTScore = (tscoreA+tscoreB);
+				double averageFrequency1 = (frequency1A+frequency1B);
+				double averageFrequency2 = (frequency2A+frequency2B);
+				double averageFrequencyBoth = (frequencyBothA+frequencyBothB);
+				LinkInformation tempInfo = new LinkInformation(word, key, averageAffinity, averageTScore, averageFrequency1, averageFrequency2, averageFrequencyBoth); 
+				toReturn.put(key, tempInfo);
+			}	
+		}
+		return toReturn;
+	}
+	
+	
+	public double lookupCombinedFrequency(String word, Corpus corpusA, int percentageA, Corpus corpusB, int percentageB){
+		double toReturn = -1;
+		double freqA = 0D;
+		double freqB = 0D;
+		if(corpusA != null){
+			freqA = corpusA.getWordFrequency(word);
+		}
+		if(corpusB != null){
+			freqB = corpusB.getWordFrequency(word);
+		}
+		
+		System.out.println("Freq A =" + freqA + " @ " + percentageA);
+		
+		System.out.println("Freq B =" + freqB + " @ " + percentageB);
+		
+		toReturn = (((freqA*percentageA)/100) + ((freqB*percentageB)/100));
+		System.out.println("total Freq =" + toReturn);
+		return toReturn;
+		
+	}
+	
+	
+	public int lookUpWordGlobally(String word, LinkedHashMap<Integer, Corpus> list){
+		for (Map.Entry<Integer,Corpus> entry : list.entrySet()) {
+				if(entry.getValue().doesWordExist(word)){
+					return entry.getKey();
+				}
+		   }
+		return -1;
+	}
+	
 	
 	/**
 	 * Check whether word exists in a given corpus
@@ -136,5 +283,7 @@ public class WordIndex {
 	public boolean lookUpWord(String word, Corpus corpus) {
 		return corpus.doesWordExist(word);
 	}
+
+	
 
 }
