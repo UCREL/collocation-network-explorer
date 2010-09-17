@@ -1,9 +1,10 @@
 package edu.gullick.CONE;
 
-import java.util.HashMap;
-import java.util.Vector;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 
 /**
  * The Class Corpus - his class represents all of the information found in one of the xml files from scotts tool.
@@ -24,6 +25,10 @@ public class Corpus {
 	
 	/** The max affinity found in the file. */
 	public double maxAffinity = Double.MIN_VALUE;
+	
+	public double maxFrequency = Double.MIN_VALUE;
+	
+	public double minFrequency = Double.MAX_VALUE;	
 
 	/**
 	 * The Enum LIMIT_TYPE - whether the limit for lookups is a percentage of total, or an actual number to lookup
@@ -37,7 +42,7 @@ public class Corpus {
 	};
 
 	/** Global information for every word held within the corpus */
-	public HashMap<String, Vector<LinkInformation>> info = new HashMap<String, Vector<LinkInformation>>();
+	public LinkedHashMap<String, LinkedHashMap<String, LinkInformation>> info = new LinkedHashMap<String, LinkedHashMap<String,LinkInformation>>();
 
 	
 	
@@ -68,7 +73,7 @@ public class Corpus {
 	 * @param word the word to lookup
 	 * @return the neighbours of the word
 	 */
-	public Vector<LinkInformation> getNeighbours(String word) {
+	public LinkedHashMap<String, LinkInformation> getNeighbours(String word) {
 		return info.get(word);
 	}
 
@@ -80,11 +85,12 @@ public class Corpus {
 	 * @param topNumber the top number
 	 * @return the inverse neighbours
 	 */
-	public Vector<LinkInformation> getInverseNeighbours(String word,
+	public LinkedHashMap<String, LinkInformation> getInverseNeighbours(String word,
 			LIMIT_TYPE percOrNum, int topNumber) {
 
-		Vector<LinkInformation> tempInfo = info.get(word);
-		Vector<LinkInformation> toReturn = new Vector<LinkInformation>();
+		LinkedHashMap<String, LinkInformation> tempInfo = info.get(word);
+		LinkedHashMap<String, LinkInformation> toReturn = new LinkedHashMap<String, LinkInformation>();
+		
 		if (tempInfo == null) {
 			return toReturn;
 		}
@@ -99,10 +105,28 @@ public class Corpus {
 			limit = (tempInfo.size() * topNumber) / 100;
 		}
 
-		for (int a = limit; a < tempInfo.size(); a++) {
-			LinkInformation li = tempInfo.get(a);
-			toReturn.add(li);
-		}
+		
+		Collection<LinkInformation> c = tempInfo.values();
+		 
+	    //obtain an Iterator for Collection
+	    java.util.Iterator<LinkInformation> itr = c.iterator();
+	 
+	    //iterate through LinkedHashMap values iterator
+	    while(itr.hasNext() && limit > 0){
+	       	limit--;
+	    }
+	    
+	    while(itr.hasNext()){
+	    	LinkInformation temp = itr.next();
+	    	
+	    	if(temp.getWord1().equals(word)){
+	    		toReturn.put(temp.getWord2(), temp);
+	    	}else{
+	    		toReturn.put(temp.getWord1(), temp);
+	    	}
+	 
+	    }
+	
 
 		return toReturn;
 	}
@@ -115,39 +139,58 @@ public class Corpus {
 	 * @param percOrNum the perc or num
 	 * @param topNumber the top number
 	 * @return the neighbours
-	 */
-	public Vector<LinkInformation> getNeighbours(String word,
+	 */LinkedHashMap<String,LinkInformation> getNeighbours(String word,
 			LIMIT_TYPE percOrNum, int topNumber) {
 
-		Vector<LinkInformation> tempInfo = info.get(word);
-		Vector<LinkInformation> toReturn = new Vector<LinkInformation>();
-		if (tempInfo == null) {
+
+			LinkedHashMap<String, LinkInformation> tempInfo = info.get(word);
+			LinkedHashMap<String, LinkInformation> toReturn = new LinkedHashMap<String, LinkInformation>();
+			
+			if (tempInfo == null) {
+				return toReturn;
+			}
+
+			int limit = 0;
+
+			if (percOrNum == LIMIT_TYPE.NUMBER) {
+				/* given limit as number form */
+				limit = Math.min(tempInfo.size(), topNumber);
+			} else {
+				/* given limit as percentage form */
+				limit = (tempInfo.size() * topNumber) / 100;
+			}
+
+			
+			Collection<LinkInformation> c = tempInfo.values();
+			 
+		    //obtain an Iterator for Collection
+		    java.util.Iterator<LinkInformation> itr = c.iterator();
+		 
+		    //iterate through LinkedHashMap values iterator
+		    while(itr.hasNext() && limit > 0){
+		    	LinkInformation temp = itr.next();
+		    	
+		    	if(temp.getWord1().equals(word)){
+		    		toReturn.put(temp.getWord2(), temp);
+		    	}else{
+		    		toReturn.put(temp.getWord1(), temp);
+		    	}
+		 
+		      	limit--;
+		   }
+		
+
 			return toReturn;
-		}
-
-		int limit = 0;
-
-		if (percOrNum == LIMIT_TYPE.NUMBER) {
-			/* given limit as number form */
-			limit = Math.min(tempInfo.size(), topNumber);
-		} else {
-			/* given limit as percentage form */
-			limit = (tempInfo.size() * topNumber) / 100;
-		}
-
-		for (int a = 0; a < limit; a++) {
-			LinkInformation li = tempInfo.get(a);
-			toReturn.add(li);
-		}
-		return toReturn;
 	}
 
+	
+	
 	/**
 	 * Gets the whole info.
 	 *
 	 * @return the info
 	 */
-	public HashMap<String, Vector<LinkInformation>> getInfo() {
+	public LinkedHashMap<String, LinkedHashMap<String, LinkInformation>> getInfo() {
 		return info;
 	}
 
@@ -197,6 +240,24 @@ public class Corpus {
 						/ ((double) word1Count + word2Count + combinedCount + totalCountMinusOthers);
 				frequency2 = ((double) word1Count + combinedCount)
 						/ ((double) word1Count + word2Count + combinedCount + totalCountMinusOthers);
+				
+				if(frequency1 > maxFrequency){
+					maxFrequency = frequency1;
+				}
+				
+				if(frequency1 < minFrequency){
+					minFrequency = frequency1;
+				}
+				
+				if(frequency2 > maxFrequency){
+					maxFrequency = frequency2;
+				}
+				
+				if(frequency2 < minFrequency){
+					minFrequency = frequency2;
+				}
+				
+				
 				frequencyBoth = ((double)  combinedCount)
 				/ ((double) word1Count + word2Count + combinedCount + totalCountMinusOthers);
 
@@ -236,15 +297,38 @@ public class Corpus {
 				frequency1, frequency2, frequencyBoth);
 
 		if (!info.containsKey(word1)) {
-			info.put(word1, new Vector<LinkInformation>());
+			info.put(word1, new LinkedHashMap<String, LinkInformation>());
 		}
 
 		if (!info.containsKey(word2)) {
-			info.put(word2, new Vector<LinkInformation>());
+			info.put(word2, new LinkedHashMap<String, LinkInformation>());
 		}
 
-		info.get(word1).add(temp);
-		info.get(word2).add(temp);
+		info.get(word1).put(word2, temp);
+		info.get(word2).put(word1, temp);
+	}
+	
+	
+	
+	/**
+	 * 
+	 * @param word to lookup
+	 * @return the frequency of that word in the corpus
+	 */
+	public Double getWordFrequency(String word){
+		Double toReturn = -10D;
+		if(!doesWordExist(word)){
+			return 0D;
+		}
+		for(LinkInformation wordInfo : getNeighbours(word, Corpus.LIMIT_TYPE.NUMBER, 1).values()){		
+				if (word.equals(wordInfo.getWord1())) {
+					toReturn = wordInfo.frequency1;
+				} else {
+					toReturn = wordInfo.frequency1;
+				}
+			
+		}
+		return toReturn;
 	}
 
 }
