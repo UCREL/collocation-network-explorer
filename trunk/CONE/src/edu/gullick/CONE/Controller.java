@@ -43,7 +43,7 @@ import edu.gullick.physics2D.Particle;
 
 
 /**
- * The Class Controller.
+ * The Class Controller - the main class that controls everything that happens in the application.
  */
 public class Controller extends JApplet implements ActionListener,
 		ItemListener, MouseListener, ChangeListener, MouseMotionListener,
@@ -117,16 +117,20 @@ public class Controller extends JApplet implements ActionListener,
 	
 	/** The old filter value. */
 	private int oldFilterValue = 50;
+	
+	/** the last value of the corpusSlider*/
 	private int oldCorpusValue = 0;
 
 	/** The corpuses. */
 	private LinkedHashMap<Integer, Corpus> corpuses = new LinkedHashMap<Integer, Corpus>();
 	
+	/**last value of thefulterSlider */
 	private int lastSliderVal = 0;
 	
+	/*boolean to decide whether execution is currently in the undo method (and if so, to not re-add something to history)**/
 	boolean currentlyInUndoMethod = false;
-	// and therefore dont re-add things to history
 
+	/*Current values for the corpuses and various percentages.*/
 	private Corpus corpusA = null;
 	private Corpus corpusB = null;
 	private int percentageA = 0;
@@ -215,7 +219,7 @@ public class Controller extends JApplet implements ActionListener,
 		}else if (e.getSource() == sidePane.searchButton) {
 			searchPressed();
 		}
-		//The following ensures that the frame gets focus after a click - so that shortcuts still work!
+		//The following ensures that the frame gets focus after a click - so that shortcuts still work after this method!
 		theGUI.menuBar.requestFocus();
 	}
 
@@ -284,6 +288,7 @@ public class Controller extends JApplet implements ActionListener,
 				toggleShowIndex(true);
 			}
 		}
+		//the following ensures the menu still gets focus after the method calls, so that shortcuts still work
 		theGUI.menuBar.requestFocus();
 	}
 
@@ -429,11 +434,20 @@ public class Controller extends JApplet implements ActionListener,
 	}
 
 
-	
+	/**
+	 * Given a WordNode, this function will set its frequency given the current corpuses.
+	 * @param wn th node to update
+	 */
 	public void updateNodeStatus(WordNode wn){
 		wn.setFrequency(wordIndex.lookupCombinedFrequency(wn.getWord(), corpusA, percentageA, corpusB, percentageB));
 	}
 	
+	/**
+	 * Will update all of the links to a node given a new list.
+	 * @param wn WordNode to update
+	 * @param neighbours HashMap of links to neighours that the node needs to have
+	 * @param willDelete whether the node will be deleted after this method call.
+	 */
 	public void updateNodeLinks(WordNode wn, LinkedHashMap<String ,LinkInformation> neighbours, boolean willDelete){
 		LinkedHashMap<String ,WordLink> currentLinks = wn.getLinks();
 		Vector<String> toRemove = new Vector<String>();
