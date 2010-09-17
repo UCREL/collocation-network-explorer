@@ -8,20 +8,9 @@ import edu.gullick.physics2D.Spring;
  */
 
 public class WordLink extends Spring {
-
-	public enum DIRECTION {A_TO_B,B_TO_A,BIDIRECTIONAL}
-	
 	/** The thickness. */
 	private int thickness = 0;
-	
-	/** The is visible. */
-	private boolean isVisible = true;
 
-
-	/** The direction. */
-	private int direction = 0;
-
-	
 	/**
 	 * Instantiates a new word link.
 	 *
@@ -31,14 +20,39 @@ public class WordLink extends Spring {
 	 * @param strength the strength
 	 * @param damping the damping
 	 * @param thickness the thickness
-	 * @param direction the direction
 	 */
-	public WordLink(WordNode a, WordNode b, float length, float strength, float damping, int thickness, int direction) {
+	public WordLink(WordNode a, WordNode b, float length, float strength, float damping, int thickness) {
 		super(a, b, strength, damping, length);
 		this.thickness = thickness;
-		this.direction = direction;
+
 	}
 
+	
+	/**
+	 * 
+	 * @param s a string to search
+	 * @return the Node on the Edge representing the given string
+	 */
+	public WordNode getEndRepresentingWord( String s){
+		if(  ((WordNode)getOneEnd()).getWord().equals(s)    ){
+			return (WordNode)getOneEnd();
+		}else{
+			return (WordNode) getTheOtherEnd();
+		}
+	}
+	
+	/**
+	 * 
+	 * @param s a string to search
+	 * @return the opposite Node on the Edge representing the given string
+	 */
+	public WordNode getEndNotRepresentingWord( String s){
+		if(!((WordNode)getOneEnd()).getWord().equals(s)    ){
+			return (WordNode)getOneEnd();
+		}else{
+			return (WordNode) getTheOtherEnd();
+		}
+	}
 	
 	/*********************************
 	 *  GETTERS AND SETTERS BELOW THIS
@@ -62,42 +76,4 @@ public class WordLink extends Spring {
 	public void setThickness(int thickness) {
 		this.thickness = thickness;
 	}
-
-	/**
-	 * Gets the direction.
-	 *
-	 * @return the direction
-	 */
-	public int getDirection() {
-		return direction;
-	}
-
-	/**
-	 * Sets the direction.
-	 *
-	 * @param direction the new direction
-	 */
-	public void setDirection(int direction) {
-		this.direction = direction;
-	}
-
-
-	/**
-	 * Sets the visible.
-	 *
-	 * @param isVisible the new visible
-	 */
-	public void setVisible(boolean isVisible) {
-		this.isVisible = isVisible;
-	}
-
-	/**
-	 * Checks if is visible.
-	 *
-	 * @return true, if is visible
-	 */
-	public boolean isVisible() {
-		return isVisible;
-	}
-
 }
