@@ -1,7 +1,10 @@
 
 package edu.gullick.CONE;
 
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import processing.core.PApplet;
 import processing.core.PFont;
@@ -115,15 +118,16 @@ public class Screen extends PApplet {
 	 */
 	public Screen(Physics physics) {
 		this.physics = physics;
-		//set the framerate
-		frameRate(15F);
-		//set up the font to draw text with
-		fontA = createFont("FFScala-32.vlw", 12);
+		setup();
 	}
 	
 
 	
 	
+	public void setup(){
+		frameRate(15F);
+		fontA = createFont("FFScala-32.vlw",36);
+	}
 	
 	/** 
 	 * draw() method. Pressing mthod to redraw the Applet (where the real work happens)
@@ -142,8 +146,6 @@ public class Screen extends PApplet {
 			topLeftY = (int) (0 - Yoffset) - 10;
 			bottomRightX = (int) ((width / zoomLevel) - Xoffset) + 10;
 			bottomRightY = (int) ((height / zoomLevel) - Yoffset) + 10;
-			int realX = (int) ((mouseX / zoomLevel) - Xoffset);
-			int realY = (int) ((mouseY / zoomLevel) - Yoffset);
 
 			//setting the background color
 			background(BACK_R, BACK_G, BACK_B);
@@ -158,7 +160,7 @@ public class Screen extends PApplet {
 			//move to the current offsets
 			translate((float) Xoffset, (float) Yoffset);
 			
-			//if placing a new node, draw the ghost node around hte mouse
+			//if placing a new node, draw the ghost node around tte mouse
 			if (followPointerWithNode) {
 				stroke(0, 0, 0, 20);
 				fill(0, 0, 0, 20);
@@ -178,18 +180,18 @@ public class Screen extends PApplet {
 						if (smoothAnimation)
 							smooth();
 						strokeWeight(wl.getThickness());
-						float[] mouse = { realX, realY };
+						//float[] mouse = { realX, realY };
 
 						float[] position1 = { wl.getOneEnd().position().x(),
 								wl.getOneEnd().position().y() };
-						float[] newPos1 = scaleUP(mouse, position1,10);
+						//float[] position1 = scaleUP(mouse, position1,10);
 
 						float[] position2 = {
 								wl.getTheOtherEnd().position().x(),
 								wl.getTheOtherEnd().position().y() };
-						float[] newPos2 = scaleUP(mouse, position2,10);
+					//	float[] position2 = scaleUP(mouse, position2,10);
 
-						line(newPos1[0], newPos1[1], newPos2[0], newPos2[1]);
+						line(position1[0], position1[1], position2[0], position2[1]);
 						if (smoothAnimation)
 							noSmooth();
 					}
@@ -208,18 +210,18 @@ public class Screen extends PApplet {
 						if (smoothAnimation)
 							smooth();
 
-						float[] mouse = { realX, realY };
+						//float[] mouse = { realX, realY };
 
 						float[] position1 = { wa.getOneEnd().position().x(),
 								wa.getOneEnd().position().y() };
-						float[] newPos1 = scaleUP(mouse, position1,10);
+						//float[] position1 = scaleUP(mouse, position1,10);
 
 						float[] position2 = {
 								wa.getTheOtherEnd().position().x(),
 								wa.getTheOtherEnd().position().y() };
-						float[] newPos2 = scaleUP(mouse, position2,10);
+						//float[] position2 = scaleUP(mouse, position2,10);
 
-						line(newPos1[0], newPos1[1], newPos2[0], newPos2[1]);
+						line(position1[0], position1[1], position2[0], position2[1]);
 
 						if (smoothAnimation)
 							noSmooth();
@@ -243,25 +245,27 @@ public class Screen extends PApplet {
 					if (mouseOver) {
 
 						stroke(200, 0, 0, 60);
-						Vector<WordLink> links = wn.getLinks();
-						for (int x = 0; x < links.size(); x++) {
-							WordLink wl = links.get(x);
+						LinkedHashMap<String,WordLink> links = wn.getLinks();
+						Object[] springs = links.values().toArray();
+						for (Object  entry : springs) {
+							WordLink wl = (WordLink) entry;
+							
 							if (smoothAnimation)
 								smooth();
 							strokeWeight(wl.getThickness());
-							float[] mouse = { realX, realY };
+						//	float[] mouse = { realX, realY };
 
 							float[] position1 = {
 									wl.getOneEnd().position().x(),
 									wl.getOneEnd().position().y() };
-							float[] newPos1 = scaleUP(mouse, position1,10);
+							//float[] position1 = scaleUP(mouse, position1,10);
 
 							float[] position2 = {
 									wl.getTheOtherEnd().position().x(),
 									wl.getTheOtherEnd().position().y() };
-							float[] newPos2 = scaleUP(mouse, position2,10);
+							//float[] position2 = scaleUP(mouse, position2,10);
 
-							line(newPos1[0], newPos1[1], newPos2[0], newPos2[1]);
+							line(position1[0], position1[1], position2[0], position2[1]);
 							if (smoothAnimation)
 								noSmooth();
 						}
@@ -277,12 +281,12 @@ public class Screen extends PApplet {
 							fill(255, 0, 0, 40);
 						}
 
-						float[] mouse = { realX, realY };
+						//float[] mouse = { realX, realY };
 						float[] position = { wn.position().x(),
 								wn.position().y() };
-						float[] newPos = scaleUP(mouse, position, size);
+					//	float[] position = scaleUP(mouse, position, size);
 
-						ellipse(newPos[0], newPos[1], size, size);
+						ellipse(position[0], position[1], size, size);
 
 						if (smoothAnimation) {
 							noSmooth();
@@ -295,6 +299,7 @@ public class Screen extends PApplet {
 
 						Double freq = wn.getFrequency();
 
+						//TODO: something more elegant here..
 						freq = freq * 50000;
 
 						if (freq < 1) {
@@ -320,7 +325,7 @@ public class Screen extends PApplet {
 						}
 
 						if (wn.isNodeOpen()) {
-							fill(180, 0, 0, 200);
+							fill(255, 0, 0, 255);
 							textFontSize *= 1.1;
 						}
 
@@ -331,25 +336,27 @@ public class Screen extends PApplet {
 						textFont(fontA, textFontSize);
 						if (smoothFont)
 							smooth();
-						float[] mouse = { realX, realY };
+						//float[] mouse = { realX, realY };
 
 						float[] position = { wn.position().x(),
 								wn.position().y() };
-						float[] newPos = scaleUP(mouse, position,10);
-						text(wn.getWord(), newPos[0]
-								- (textWidth(wn.getWord()) / 2), newPos[1]);
+						//float[] position = scaleUP(mouse, position,10);
+						
+						
+						text(wn.getWord(), position[0]
+								- (textWidth(wn.getWord()) / 2), position[1]);
 						if (smoothFont)
 							noSmooth();
 
-						if (!wn.isInCurrentCorpus()) {
+						if (wn.getFrequency() <= 0) {
 							stroke(255, 0, 0, 128);
 							strokeWeight(5);
-							line(newPos[0] - textFontSize, newPos[1]
-									- textFontSize, newPos[0] + textFontSize,
-									newPos[1] + textFontSize);
-							line(newPos[0] - textFontSize, newPos[1]
-									+ textFontSize, newPos[0] + textFontSize,
-									newPos[1] - textFontSize);
+							line(position[0] - textFontSize, position[1]
+									- textFontSize, position[0] + textFontSize,
+									position[1] + textFontSize);
+							line(position[0] - textFontSize, position[1]
+									+ textFontSize, position[0] + textFontSize,
+									position[1] - textFontSize);
 						}
 
 					}
@@ -400,14 +407,15 @@ public class Screen extends PApplet {
 
 	
 	
-	/**
+	/* NO LONGER USED - THE LENSE EFFECT MADE IT HARD TO CLICK NODES. CODE KEPT FOR FUTURE USE.
 	 * Scale up. Is used to scale/move things on the applet depending on mouse position.Results in the lense effect.
 	 * -- Thanks to Francois Taiani for this code!
 	 * @param mouse the mouse
 	 * @param position the position
 	 * @param diameter the diameter
 	 * @return the float[]
-	 */
+	
+	 
 	public float[] scaleUP(float[] mouse, float[] position, int diameter) {
 		float[] posToMouse = { position[0] - mouse[0], position[1] - mouse[1] };
 		float d = sqrt(posToMouse[0] * posToMouse[0] + posToMouse[1]
@@ -417,6 +425,7 @@ public class Screen extends PApplet {
 				mouse[1] + posToMouse[1] * scale, scale };
 		return result;
 	}
+	*/
 
 	/**
 	 * Checks if a given WordNode is on screen
@@ -466,17 +475,17 @@ public class Screen extends PApplet {
 		//calculate the mouse position in respect to the whole canvas (not jsut what is on screen)
 		int realX = (int) ((mouseX / zoomLevel) - Xoffset);
 		int realY = (int) ((mouseY / zoomLevel) - Yoffset);
-		float[] mouse = { realX, realY };
+		//float[] mouse = { realX, realY };
 		float[] position = { n.position().x(), n.position().y() };
 		
 		//also take into account the scaling of the items
-		float[] newPos = scaleUP(mouse, position, 10);
-
+		//float[] position = scaleUP(mouse, position, 10);
 		
-		if (newPos[0] < (realX + SELECT_AREA)
-				&& newPos[0] > (realX - SELECT_AREA)
-				&& newPos[1] < (realY + SELECT_AREA)
-				&& newPos[1] > (realY - SELECT_AREA)){
+		
+		if (position[0] < (realX + SELECT_AREA)
+				&& position[0] > (realX - SELECT_AREA)
+				&& position[1] < (realY + SELECT_AREA)
+				&& position[1] > (realY - SELECT_AREA)){
 			return true;
 		}
 		return false;
@@ -498,6 +507,25 @@ public class Screen extends PApplet {
 	
 	
 	
+	public int getCenterX(){
+		return (int) 	((width/2 / zoomLevel) - Xoffset);
+
+		
+	}
+	
+	public int getCenterY(){
+		return (int) 	((height/2 / zoomLevel) - Xoffset);
+	}
+	
+	
+	
+	public int getPhysicsWidth(){
+		return (int) 	((width/ zoomLevel));
+	}
+	
+	public int getPhysicsHeight(){
+		return (int) 	((height/ zoomLevel));
+	}
 	
 	/* ************************************
 	 * GETTERS AND SETTERS AFTER THIS!
