@@ -1,6 +1,6 @@
 package edu.gullick.CONE;
 /**
- * The Class ScreenSet. Is used to record all of the settings of the screen at some time
+ * The Class ScreenSet. Is used to record all of the settings of the screen at some time - mostly used for the undo feature.
  */
 
 public class ScreenSet {
