@@ -24,29 +24,11 @@ public class HistoryObject {
 		 /** The DELET e_ node. */
 		 DELETE_NODE, 
 		 /** The ADJUS t_ tfilter. */
-		 ADJUST_TFILTER, 
-		 /** The TOGGL e_ displa y_ debug. */
-		 TOGGLE_DISPLAY_DEBUG, 
-		 /** The TOGGL e_ displa y_ words. */
-		 TOGGLE_DISPLAY_WORDS, 
-		 /** The TOGGL e_ displa y_ edges. */
-		 TOGGLE_DISPLAY_EDGES, 
-		 /** The TOGGL e_ displa y_ forces. */
-		 TOGGLE_DISPLAY_FORCES, 
-		 /** The TOGGL e_ displa y_ nodes. */
-		 TOGGLE_DISPLAY_NODES, 
-		 /** The TOGGL e_ smoot h_ font. */
-		 TOGGLE_SMOOTH_FONT, 
-		 /** The TOGGL e_ smoot h_ animation. */
-		 TOGGLE_SMOOTH_ANIMATION, 
-		 /** The PAUS e_ physics. */
-		 PAUSE_PHYSICS, 
-		 /** The SHO w_ index. */
-		 SHOW_INDEX, 
-		 /** The ZOO m_ in. */
-		 ZOOM_IN, 
-		 /** The ZOO m_ out. */
-		 ZOOM_OUT
+		CHANGE_CORPUS_SLIDER,
+		 /** The ADJUS t_ tfilter. */
+		CENTER_ON_NODE,
+		
+		CHANGE_FILTER_SLIDER
 	};
 
 	/** The details of the onject (can be an object, a description ,etc). */
