@@ -1,6 +1,18 @@
+/*
+ * 
+ */
 package edu.gullick.physics2D;
 
-public interface Integrator 
-{
-	public void step( float t );
+// TODO: Auto-generated Javadoc
+/**
+ * The Interface Integrator.
+ */
+public interface Integrator {
+	
+	/**
+	 * Step.
+	 *
+	 * @param t the t
+	 */
+	public void step(float t);
 }

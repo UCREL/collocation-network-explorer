@@ -2,121 +2,181 @@
 
 package edu.gullick.physics2D;
 
-public class Attraction implements Force
-{
-	Particle a;
-	Particle b;
-	float k;
-	boolean on;
-	float distanceMin;
-	float distanceMinSquared;
+// TODO: Auto-generated Javadoc
+/**
+ * The Class Attraction.
+ */
+public class Attraction implements Force {
 	
-	public Attraction( Particle a, Particle b, float k, float distanceMin )
-	{
+	/** The a. */
+	Particle a;
+	
+	/** The b. */
+	Particle b;
+	
+	/** The k. */
+	float k;
+	
+	/** The on. */
+	boolean on;
+	
+	/** The distance min. */
+	float distanceMin;
+	
+	/** The distance min squared. */
+	float distanceMinSquared;
+
+	/**
+	 * Instantiates a new attraction.
+	 *
+	 * @param a the a
+	 * @param b the b
+	 * @param k the k
+	 * @param distanceMin the distance min
+	 */
+	public Attraction(Particle a, Particle b, float k, float distanceMin) {
 		this.a = a;
 		this.b = b;
 		this.k = k;
 		on = true;
 		this.distanceMin = distanceMin;
-		this.distanceMinSquared = distanceMin*distanceMin;
+		this.distanceMinSquared = distanceMin * distanceMin;
 	}
 
-	protected void setA( Particle p )
-	{
+	/**
+	 * Sets the a.
+	 *
+	 * @param p the new a
+	 */
+	protected void setA(Particle p) {
 		a = p;
 	}
 
-	protected void setB( Particle p )
-	{
+	/**
+	 * Sets the b.
+	 *
+	 * @param p the new b
+	 */
+	protected void setB(Particle p) {
 		b = p;
 	}
 
-	public final float getMinimumDistance()
-	{
+	/**
+	 * Gets the minimum distance.
+	 *
+	 * @return the minimum distance
+	 */
+	public final float getMinimumDistance() {
 		return distanceMin;
 	}
 
-	public final void setMinimumDistance( float d )
-	{
+	/**
+	 * Sets the minimum distance.
+	 *
+	 * @param d the new minimum distance
+	 */
+	public final void setMinimumDistance(float d) {
 		distanceMin = d;
-		distanceMinSquared = d*d;
+		distanceMinSquared = d * d;
 	}
 
-	public final void turnOff()
-	{
+	/* (non-Javadoc)
+	 * @see edu.gullick.physics2D.Force#turnOff()
+	 */
+	public final void turnOff() {
 		on = false;
 	}
 
-	public final void turnOn()
-	{
+	/* (non-Javadoc)
+	 * @see edu.gullick.physics2D.Force#turnOn()
+	 */
+	public final void turnOn() {
 		on = true;
 	}
 
-	public final void setStrength( float k )
-	{
+	/**
+	 * Sets the strength.
+	 *
+	 * @param k the new strength
+	 */
+	public final void setStrength(float k) {
 		this.k = k;
 	}
 
-	public final Particle getOneEnd()
-	{
+	/**
+	 * Gets the one end.
+	 *
+	 * @return the one end
+	 */
+	public final Particle getOneEnd() {
 		return a;
 	}
 
-	public final Particle getTheOtherEnd()
-	{
+	/**
+	 * Gets the the other end.
+	 *
+	 * @return the the other end
+	 */
+	public final Particle getTheOtherEnd() {
 		return b;
 	}
 
-	public void apply()
-	{
-		if ( on && ( a.isFree() || b.isFree() ) )
-		{
+	/* (non-Javadoc)
+	 * @see edu.gullick.physics2D.Force#apply()
+	 */
+	public void apply() {
+		if (on && (a.isFree() || b.isFree())) {
 			float a2bX = a.position().x() - b.position().x();
 			float a2bY = a.position().y() - b.position().y();
 
+			float a2bDistanceSquared = a2bX * a2bX + a2bY * a2bY;
 
-			float a2bDistanceSquared = a2bX*a2bX + a2bY*a2bY;
-
-			if ( a2bDistanceSquared < distanceMinSquared )
+			if (a2bDistanceSquared < distanceMinSquared)
 				a2bDistanceSquared = distanceMinSquared;
 
 			float force = k / a.mass / b.mass / a2bDistanceSquared;
-//TODO: above / changed from * -- look into this
-			float length = (float)Math.sqrt( a2bDistanceSquared );
-			
+			// TODO: above / changed from * -- look into this
+			float length = (float) Math.sqrt(a2bDistanceSquared);
+
 			// make unit vector
-			
+
 			a2bX /= length;
 			a2bY /= length;
-	
-			
-			// multiply by force 
-			
+
+			// multiply by force
+
 			a2bX *= force;
 			a2bY *= force;
-	
 
 			// apply
-			
-			if ( a.isFree() )
-				a.force().add( -a2bX, -a2bY );
-			if ( b.isFree() )
-				b.force().add( a2bX, a2bY );
+
+			if (a.isFree())
+				a.force().add(-a2bX, -a2bY);
+			if (b.isFree())
+				b.force().add(a2bX, a2bY);
 		}
 	}
 
-	public final float getStrength()
-	{
+	/**
+	 * Gets the strength.
+	 *
+	 * @return the strength
+	 */
+	public final float getStrength() {
 		return k;
 	}
 
-	public final boolean isOn()
-	{
+	/* (non-Javadoc)
+	 * @see edu.gullick.physics2D.Force#isOn()
+	 */
+	public final boolean isOn() {
 		return on;
 	}
 
-	public final boolean isOff()
-	{
+	/* (non-Javadoc)
+	 * @see edu.gullick.physics2D.Force#isOff()
+	 */
+	public final boolean isOff() {
 		return !on;
 	}
 }
